@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Node
+node_modules/
+
+# Environment secrets
+.env
+
+# Claude
+.claude/
+
+# Data and logs
+data/*.csv
+logs/*.txt
+npm-debug.log*
+
+# Next.js
+.next/
