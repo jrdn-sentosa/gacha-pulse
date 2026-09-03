@@ -25,3 +25,14 @@ npm-debug.log*
 
 # Next.js
 .next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
+# Env
+.env*.local
+
+# OS
+.DS_Store
