@@ -43,8 +43,8 @@ insert into games (name, steam_appid, is_eos, eos_announced_date, eos_shutdown_d
 ('Honkai Impact 3rd', '1671200', false, null, null),
 ('Tower of Fantasy', '2064650', false, null, null),
 ('Reverse: 1999', '3092660', false, null, null),
-('Tribe Nine', '2376580', true, '2025-05-15', '2025-11-27'),
-('Final Fantasy VII: Ever Crisis', '2484110', true, '2026-07-07', '2026-10-06'),
+('TRIBE NINE', '2376580', true, '2025-05-15', '2025-11-27'),
+('FINAL FANTASY VII EVER CRISIS', '2484110', true, '2026-07-07', '2026-10-06'),
 ('Gran Saga', '3016760', true, '2025-03-05', '2025-04-30'),
 ('Battle Star', '1436650', true, '2024-05-08', '2024-06-28'),
 ('Atelier Resleriana: Forgotten Alchemy and the Polar Night Liberator', '2594920', true, '2025-01-27', '2025-03-28');
