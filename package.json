@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "load": "node scripts/load-reviews-to-supabase.mjs",
+    "fetch-header-images": "node scripts/fetch-header-images.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
@@ -21,6 +22,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
+    "framer-motion": "^13.2.0",
     "lucide-react": "^1.40.0",
     "next": "^14.2.5",
     "papaparse": "^5.7.0",

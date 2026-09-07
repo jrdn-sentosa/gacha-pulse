@@ -10,6 +10,7 @@ create table games (
   is_eos boolean default false,
   eos_announced_date date,
   eos_shutdown_date date,
+  header_image text,
   created_at timestamptz default now()
 );
 

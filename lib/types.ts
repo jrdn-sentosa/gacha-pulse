@@ -5,6 +5,7 @@ export interface Game {
   is_eos: boolean;
   eos_announced_date: string | null;
   eos_shutdown_date: string | null;
+  header_image: string | null;
 }
 
 export interface RawReview {

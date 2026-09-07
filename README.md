@@ -1,6 +1,6 @@
 # Gacha Pulse
 
-A dashboard tracking sentiment and review trends across gacha games over time, including comparisons against titles that have already reached end-of-service (EoS), to explore whether declining sentiment is a leading indicator of shutdown.
+A dashboard tracking sentiment and review trends across gacha games over time, including comparisons against titles that have already reached end-of-service (EoS), to explore whether declining sentiment is a leading indicator of shutdown. First-time visitors get a gacha-style "pull" reveal of the 10 tracked games before landing on the dashboard.
 
 ## Games tracked
 
@@ -22,18 +22,20 @@ A dashboard tracking sentiment and review trends across gacha games over time, i
 ## Tech stack
 
 - **Next.js** — dashboard app, deployed on Vercel
-- **shadcn/ui** — component library
+- **shadcn/ui** + **Tailwind CSS** — component library
+- **Recharts** — sentiment/volume charts
+- **Framer Motion** — gacha pull reveal animations
 - **Supabase** (Postgres) — data storage
 - **Python** (`uv`) — data collection scripts
-- **Node.js** — Supabase loader script
+- **Node.js** — Supabase loader / enrichment scripts
 
 ## Setup
 
 ### 1. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql) — this creates the `games` and `reviews` tables, sets up read-only RLS policies, and seeds the original 7 games.
-3. Then run [`supabase/add_games.sql`](./supabase/add_games.sql) — adds 3 more EoS games (Gran Saga, Battle Star, Atelier Resleriana) found after the initial pass, bringing the set to 5 live / 5 EoS.
+2. In the SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql) — this creates the `games` and `reviews` tables, sets up read-only RLS policies, and seeds all 10 games (5 live / 5 EoS).
+3. If you're updating an existing database created before `header_image` was added to the schema, also run [`supabase/migrations/001_add_header_image.sql`](./supabase/migrations/001_add_header_image.sql).
 4. From **Project Settings → API**, grab:
    - `Project URL`
    - `anon` / `public` key (safe for client-side use)
@@ -68,7 +70,7 @@ Reviews are collected in two steps, then loaded into Supabase:
 
 1. `fetch_reviews.py` pulls Steam reviews for the 5 healthy (still-live) games and writes `data/steam_reviews.csv`.
 2. `fetch_reviews_append.py` appends Steam reviews for the 2 EoS (end-of-service) games to the same CSV.
-3. `load-reviews-to-supabase.js` reads `data/steam_reviews.csv` and loads it into the Supabase `reviews` table, matching each row to its `game_id` by name.
+3. `load-reviews-to-supabase.mjs` reads `data/steam_reviews.csv` and loads it into the Supabase `reviews` table, matching each row to its `game_id` by name.
 
 Run in order, from the repo root:
 
@@ -81,6 +83,16 @@ npm run load
 ```
 
 `data/steam_reviews.csv` and `logs/*.txt` are gitignored (the CSV is ~36MB and fully regeneratable from the commands above, so it isn't committed).
+
+### Header images
+
+Game card images (dashboard + pull reveal) use each game's real Steam header image, resolved once via Steam's public `appdetails` API and cached in the `games.header_image` column — not fetched live on every page load. Run this once (and again any time a game is added):
+
+```sh
+npm run fetch-header-images
+```
+
+`scripts/fetch-header-images.mjs` looks up `header_image` for each game and writes it to Supabase, rate-limited to avoid hitting Steam's API too fast. If a game's lookup fails or returns no image, `header_image` stays `null` and the UI falls back to a solid-color card — no broken-image icon.
 
 ### Verifying the load
 
@@ -99,7 +111,7 @@ group by g.name;
 npm run dev
 ```
 
-Visit `http://localhost:3000`.
+Visit `http://localhost:3000` — first-time visitors see the gacha pull reveal, then land on `/dashboard`. Visit `/dashboard` directly to skip the reveal.
 
 ## Deployment (Vercel)
 
@@ -116,15 +128,25 @@ Visit `http://localhost:3000`.
 
 ```
 gacha/
-├── app/                    # Next.js dashboard (pages, layout)
-├── components/             # shadcn UI components + charts
-├── lib/                    # Supabase client, data-fetching helpers
-├── scripts/                # data collection & loading
+├── app/
+│   ├── page.tsx             # "/" — gacha pull reveal, then redirects to /dashboard
+│   ├── pull/page.tsx        # "/pull" — replay the pull reveal
+│   └── dashboard/page.tsx   # "/dashboard" — sentiment/volume charts, healthy vs EoS
+├── components/
+│   ├── dashboard/           # charts, game cards, sentiment/volume views
+│   ├── pull/                # gacha pull reveal UI
+│   └── ui/                  # shadcn primitives
+├── hooks/
+│   └── use-dashboard-data.ts  # fetches games + reviews from Supabase
+├── lib/                     # Supabase client, aggregation, types, theme
+├── scripts/                 # data collection & loading
 │   ├── fetch_reviews.py
 │   ├── fetch_reviews_append.py
-│   └── load-reviews-to-supabase.js
+│   ├── load-reviews-to-supabase.mjs
+│   └── fetch-header-images.mjs
 ├── supabase/
-│   └── schema.sql
+│   ├── schema.sql
+│   └── migrations/
 ├── data/                   # gitignored CSV output
 ├── logs/                   # gitignored run logs
 ├── .env.example
