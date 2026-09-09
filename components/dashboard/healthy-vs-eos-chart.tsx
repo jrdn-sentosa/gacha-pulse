@@ -83,7 +83,7 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
           />
           <div className="h-[360px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 20, right: 12, left: -12, bottom: 0 }}>
+              <LineChart data={rows} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="weeksOffset"
@@ -102,7 +102,7 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  width={48}
+                  width={56}
                 />
                 <ReferenceLine
                   x={0}

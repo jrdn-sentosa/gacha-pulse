@@ -26,6 +26,8 @@ interface WeeklyTrendChartProps {
   smoothingWindow?: number;
   /** "one-per-tier" opens the chart with just one gold/purple/blue/gray game selected, instead of all of them. */
   defaultSelection?: "all" | "one-per-tier";
+  /** "log" compresses large spikes so lower-volume games stay readable — overrides yDomain with a log-safe [1, "auto"]. */
+  yScale?: "linear" | "log";
 }
 
 export function WeeklyTrendChart({
@@ -36,6 +38,7 @@ export function WeeklyTrendChart({
   tooltipFormatter,
   smoothingWindow,
   defaultSelection = "all",
+  yScale = "linear",
 }: WeeklyTrendChartProps) {
   const [visible, setVisible] = useState<Set<string>>(() =>
     defaultSelection === "one-per-tier"
@@ -70,7 +73,7 @@ export function WeeklyTrendChart({
       <GameToggleLegend series={series} visible={visible} onToggle={toggle} />
       <div className="h-[320px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rows} margin={{ top: 4, right: 12, left: -12, bottom: 0 }}>
+          <LineChart data={rows} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="weekStart"
@@ -82,13 +85,15 @@ export function WeeklyTrendChart({
               minTickGap={40}
             />
             <YAxis
-              domain={yDomain}
+              domain={yScale === "log" ? [1, "auto"] : yDomain}
+              scale={yScale === "log" ? "log" : "linear"}
+              allowDataOverflow={yScale === "log"}
               tickFormatter={yTickFormatter}
               stroke="var(--muted-foreground)"
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              width={48}
+              width={56}
             />
             <Tooltip
               contentStyle={{
