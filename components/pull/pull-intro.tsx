@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencyCounter } from "@/components/pull/currency-counter";
 import { CapsuleGrid } from "@/components/pull/capsule-grid";
@@ -23,6 +24,7 @@ export function PullIntro() {
   const [phase, setPhase] = useState<Phase>("banner");
   const [showSkip, setShowSkip] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => {
     if (series.length > 0 && !cards) {
@@ -67,6 +69,12 @@ export function PullIntro() {
 
   function handleSkip() {
     setPhase("complete");
+  }
+
+  function handleViewDashboard() {
+    if (navigating) return;
+    setNavigating(true);
+    router.push("/dashboard");
   }
 
   return (
@@ -117,9 +125,9 @@ export function PullIntro() {
             <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Gacha Pulse
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {phase === "complete" ? "Here's your roster." : "Charging your pull…"}
-            </p>
+            {phase !== "complete" && (
+              <p className="text-sm text-muted-foreground">Charging your pull…</p>
+            )}
           </div>
 
           {error && (
@@ -149,10 +157,12 @@ export function PullIntro() {
               >
                 <Button
                   size="lg"
-                  onClick={() => router.push("/dashboard")}
-                  className="h-12 rounded-full px-8 text-base font-semibold"
+                  onClick={handleViewDashboard}
+                  disabled={navigating}
+                  className="h-12 gap-2 rounded-full px-8 text-base font-semibold"
                 >
-                  View Dashboard
+                  {navigating && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {navigating ? "Loading Dashboard..." : "View Dashboard"}
                 </Button>
               </motion.div>
             </div>
