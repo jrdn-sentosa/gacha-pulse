@@ -87,9 +87,9 @@ export function PullIntro() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute right-5 top-5 z-30 text-xs font-medium text-muted-foreground/70 underline-offset-4 transition-colors hover:text-muted-foreground hover:underline"
+            className="absolute right-5 top-5 z-30 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground/70 underline-offset-4 transition-colors hover:text-muted-foreground hover:underline"
           >
-            Skip
+            Skip <span aria-hidden="true">▶</span>
           </motion.button>
         )}
       </AnimatePresence>
