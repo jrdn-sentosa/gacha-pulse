@@ -11,6 +11,7 @@ create table games (
   eos_announced_date date,
   eos_shutdown_date date,
   header_image text,
+  hero_image text,
   created_at timestamptz default now()
 );
 

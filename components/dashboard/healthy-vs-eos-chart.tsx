@@ -50,6 +50,11 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
           anchored to today, as if they announced right now — solid lines are live, dashed lines
           are games that have already shut down.
         </CardDescription>
+        <p className="text-xs text-muted-foreground/70">
+          Reviews posted after a game&rsquo;s shutdown date are excluded from this comparison —
+          post-shutdown reviews often reflect reactions to the closure itself (nostalgia or
+          frustration) rather than conditions that led to it.
+        </p>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">

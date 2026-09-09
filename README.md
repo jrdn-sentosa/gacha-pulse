@@ -35,7 +35,7 @@ A dashboard tracking sentiment and review trends across gacha games over time, i
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. In the SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql) — this creates the `games` and `reviews` tables, sets up read-only RLS policies, and seeds all 10 games (5 live / 5 EoS).
-3. If you're updating an existing database created before `header_image` was added to the schema, also run [`supabase/migrations/001_add_header_image.sql`](./supabase/migrations/001_add_header_image.sql).
+3. If you're updating an existing database created before `header_image` or `hero_image` were added to the schema, add the missing column(s) with `alter table games add column header_image text;` / `alter table games add column hero_image text;`.
 4. From **Project Settings → API**, grab:
    - `Project URL`
    - `anon` / `public` key (safe for client-side use)
@@ -94,6 +94,16 @@ npm run fetch-header-images
 
 `scripts/fetch-header-images.mjs` looks up `header_image` for each game and writes it to Supabase, rate-limited to avoid hitting Steam's API too fast. If a game's lookup fails or returns no image, `header_image` stays `null` and the UI falls back to a solid-color card — no broken-image icon.
 
+### Hero images
+
+`header_image` is a small 460x215 asset — stretched into the pull-reveal and banner cards, it looks blurry. Steam's CDN also serves a much larger `library_hero.jpg` banner (~3840x1240) for most (not all) apps, which is both higher resolution and, cropped with `object-fit: cover`, a better source for those cards. Run this once (and again any time a game is added):
+
+```sh
+npm run fetch-hero-images
+```
+
+`scripts/fetch-hero-images.mjs` probes `https://cdn.akamai.steamstatic.com/steam/apps/{appid}/library_hero.jpg` directly for each game (this asset isn't exposed by the `appdetails` API) and writes it to `games.hero_image` on a 200. If a game has no hero asset (a 404 — true for one of the tracked games), `hero_image` stays `null` and the UI falls back to `header_image` for that card. Because `library_hero.jpg` is landscape, cards render it with a center crop by default; a per-game `object-position` override list in `lib/pull.ts` (`HERO_CROP_OVERRIDES`) handles the rare game whose character sits off-center and gets awkwardly cropped.
+
 ### Verifying the load
 
 In the Supabase SQL Editor:
@@ -143,10 +153,10 @@ gacha/
 │   ├── fetch_reviews.py
 │   ├── fetch_reviews_append.py
 │   ├── load-reviews-to-supabase.mjs
-│   └── fetch-header-images.mjs
+│   ├── fetch-header-images.mjs
+│   └── fetch-hero-images.mjs
 ├── supabase/
-│   ├── schema.sql
-│   └── migrations/
+│   └── schema.sql
 ├── data/                   # gitignored CSV output
 ├── logs/                   # gitignored run logs
 ├── .env.example

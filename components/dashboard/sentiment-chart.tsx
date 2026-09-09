@@ -9,7 +9,10 @@ export function SentimentChart({ series }: { series: GameSeries[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Sentiment over time</CardTitle>
-        <CardDescription>Weekly % of reviews marked positive, per game.</CardDescription>
+        <CardDescription>
+          4-week rolling average of % positive reviews, per game — smoothed to cut week-to-week
+          noise.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <WeeklyTrendChart
@@ -18,6 +21,8 @@ export function SentimentChart({ series }: { series: GameSeries[] }) {
           yDomain={[0, 100]}
           yTickFormatter={(v) => `${v}%`}
           tooltipFormatter={(v) => `${v.toFixed(1)}%`}
+          smoothingWindow={4}
+          defaultSelection="one-per-tier"
         />
       </CardContent>
     </Card>

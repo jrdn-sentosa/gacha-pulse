@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "load": "node scripts/load-reviews-to-supabase.mjs",
     "fetch-header-images": "node scripts/fetch-header-images.mjs",
+    "fetch-hero-images": "node scripts/fetch-hero-images.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"

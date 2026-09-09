@@ -23,6 +23,6 @@ export function tierFor(isEos: boolean, currentSentiment: number | null): Tier {
   if (isEos) return "gray";
   if (currentSentiment === null) return "purple";
   if (currentSentiment >= 85) return "gold";
-  if (currentSentiment >= 65) return "purple";
+  if (currentSentiment >= 70) return "purple";
   return "blue";
 }

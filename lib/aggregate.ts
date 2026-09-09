@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, format, parseISO, startOfWeek } from "date-fns";
 import { tierFor } from "./theme";
-import type { Game, GameSeries, RawReview, WeeklyPoint } from "./types";
+import type { Game, GameSeries, RawReview, ReviewPhase, WeeklyPoint } from "./types";
 
 /** Weeks below this many reviews are too noisy to trust a % positive figure for — shown as a gap instead. */
 const MIN_WEEKLY_SAMPLE = 5;
@@ -9,6 +9,23 @@ const MIN_WEEKLY_SAMPLE = 5;
 function weekKey(dateIso: string): string {
   const weekStart = startOfWeek(parseISO(dateIso), { weekStartsOn: 1 });
   return format(weekStart, "yyyy-MM-dd");
+}
+
+/**
+ * Classifies a date against a game's EoS timeline:
+ *   no announcement       -> "live"
+ *   before announcement   -> "pre_announcement"
+ *   announcement..shutdown -> "announced"
+ *   after shutdown        -> "post_shutdown"
+ * Applied per weekly bucket (weekStart) rather than per review — buckets are
+ * narrow enough that this matches a per-review classification in practice.
+ */
+function reviewPhaseFor(date: Date, game: Pick<Game, "eos_announced_date" | "eos_shutdown_date">): ReviewPhase {
+  if (!game.eos_announced_date) return "live";
+  const announced = parseISO(game.eos_announced_date);
+  if (date < announced) return "pre_announcement";
+  if (game.eos_shutdown_date && date > parseISO(game.eos_shutdown_date)) return "post_shutdown";
+  return "announced";
 }
 
 /**
@@ -47,14 +64,18 @@ export function buildGameSeries(games: Game[], reviews: RawReview[]): GameSeries
     }
 
     const weekly: WeeklyPoint[] = Array.from(buckets.entries())
-      .map(([key, b]) => ({
-        weekStart: parseISO(key),
-        weekLabel: format(parseISO(key), "MMM d, yyyy"),
-        positive: b.positive,
-        total: b.total,
-        pctPositive: b.total >= MIN_WEEKLY_SAMPLE ? (b.positive / b.total) * 100 : null,
-        avgPlaytimeHours: b.playtimeCount > 0 ? b.playtimeSum / b.playtimeCount / 60 : null,
-      }))
+      .map(([key, b]) => {
+        const weekStart = parseISO(key);
+        return {
+          weekStart,
+          weekLabel: format(weekStart, "MMM d, yyyy"),
+          positive: b.positive,
+          total: b.total,
+          pctPositive: b.total >= MIN_WEEKLY_SAMPLE ? (b.positive / b.total) * 100 : null,
+          avgPlaytimeHours: b.playtimeCount > 0 ? b.playtimeSum / b.playtimeCount / 60 : null,
+          reviewPhase: reviewPhaseFor(weekStart, game),
+        };
+      })
       .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
 
     const currentSentiment = trailingSentiment(weekly, 4);
@@ -88,24 +109,115 @@ interface MergedWeekRow {
   [gameId: string]: number | Date | string | null;
 }
 
-/** Unions every game's weekly buckets onto shared rows keyed by calendar week, for multi-line charts. */
+/** The dataKey a game's post-shutdown ("aftermath") line segment is stored under in a MergedWeekRow. */
+export function aftermathKey(gameId: string): string {
+  return `${gameId}__after`;
+}
+
+/**
+ * Splits one game's already-computed values into a "main" series (nulled out from the
+ * first post_shutdown week on) and an "after" series (nulled out everywhere else) — the
+ * last pre-shutdown point is duplicated into "after" so the two segments visually
+ * connect with no gap where a chart renders them as solid vs. dashed lines.
+ */
+function splitByAftermath(
+  weekly: WeeklyPoint[],
+  values: (number | null)[]
+): { main: (number | null)[]; after: (number | null)[] } {
+  const firstAfterIndex = weekly.findIndex((w) => w.reviewPhase === "post_shutdown");
+  const bridgeIndex = firstAfterIndex > 0 ? firstAfterIndex - 1 : -1;
+  const main: (number | null)[] = [];
+  const after: (number | null)[] = [];
+  weekly.forEach((w, i) => {
+    const isAfter = w.reviewPhase === "post_shutdown";
+    main.push(isAfter ? null : values[i]);
+    after.push(isAfter || i === bridgeIndex ? values[i] : null);
+  });
+  return { main, after };
+}
+
+/**
+ * Unions every game's weekly buckets onto shared rows keyed by calendar week, for multi-line
+ * charts. Each game gets two dataKeys — its id (pre/at-shutdown) and aftermathKey(id)
+ * (post_shutdown) — so a chart can render the aftermath as a visually distinct segment.
+ */
 export function mergeWeeklySeries(
   series: GameSeries[],
   metric: (point: WeeklyPoint) => number | null
 ): MergedWeekRow[] {
   const map = new Map<string, MergedWeekRow>();
   for (const s of series) {
-    for (const w of s.weekly) {
+    const { main, after } = splitByAftermath(s.weekly, s.weekly.map(metric));
+    s.weekly.forEach((w, i) => {
       const key = format(w.weekStart, "yyyy-MM-dd");
       let row = map.get(key);
       if (!row) {
         row = { weekStart: w.weekStart, weekLabel: w.weekLabel };
         map.set(key, row);
       }
-      row[s.game.id] = metric(w);
-    }
+      row[s.game.id] = main[i];
+      row[aftermathKey(s.game.id)] = after[i];
+    });
   }
   return Array.from(map.values()).sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
+}
+
+/** Trailing N-point mean at each index, averaging over whatever non-null points fall in the window. */
+function trailingAverage(values: (number | null)[], windowSize: number): (number | null)[] {
+  return values.map((_, i) => {
+    const window = values.slice(Math.max(0, i - windowSize + 1), i + 1).filter((v): v is number => v !== null);
+    return window.length > 0 ? window.reduce((sum, v) => sum + v, 0) / window.length : null;
+  });
+}
+
+/**
+ * Same shape as mergeWeeklySeries, but each game's own values are first smoothed
+ * with a trailing rolling average — cuts week-to-week noise on the line chart
+ * without needing to touch the underlying weekly buckets. Still splits into
+ * main/aftermath dataKeys the same way.
+ */
+export function mergeWeeklySeriesSmoothed(
+  series: GameSeries[],
+  metric: (point: WeeklyPoint) => number | null,
+  windowSize: number
+): MergedWeekRow[] {
+  const map = new Map<string, MergedWeekRow>();
+  for (const s of series) {
+    const smoothed = trailingAverage(s.weekly.map(metric), windowSize);
+    const { main, after } = splitByAftermath(s.weekly, smoothed);
+    s.weekly.forEach((w, i) => {
+      const key = format(w.weekStart, "yyyy-MM-dd");
+      let row = map.get(key);
+      if (!row) {
+        row = { weekStart: w.weekStart, weekLabel: w.weekLabel };
+        map.set(key, row);
+      }
+      row[s.game.id] = main[i];
+      row[aftermathKey(s.game.id)] = after[i];
+    });
+  }
+  return Array.from(map.values()).sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
+}
+
+/**
+ * Picks one representative game id per tier (gold/purple/blue/gray) — used to seed
+ * a chart's default legend selection so it opens readable instead of all 10 at once.
+ * Skips any tier with no games. Highest current sentiment wins within live tiers;
+ * the most recently shut-down game wins for gray/EoS.
+ */
+export function pickOneGamePerTier(series: GameSeries[]): Set<string> {
+  const ids = new Set<string>();
+  for (const tier of ["gold", "purple", "blue"] as const) {
+    const best = series
+      .filter((s) => s.tier === tier)
+      .sort((a, b) => (b.currentSentiment ?? -1) - (a.currentSentiment ?? -1))[0];
+    if (best) ids.add(best.game.id);
+  }
+  const mostRecentEos = series
+    .filter((s) => s.tier === "gray")
+    .sort((a, b) => (b.game.eos_shutdown_date ?? "").localeCompare(a.game.eos_shutdown_date ?? ""))[0];
+  if (mostRecentEos) ids.add(mostRecentEos.game.id);
+  return ids;
 }
 
 /** The date each game's trajectory should be aligned against: announcement date for EoS games, "now" for live ones. */
@@ -119,12 +231,17 @@ interface AlignedRow {
   [gameId: string]: number | null;
 }
 
-/** Merges every game's sentiment trend onto a shared "weeks relative to EoS announcement" axis. */
+/**
+ * Merges every game's sentiment trend onto a shared "weeks relative to EoS announcement" axis —
+ * excludes post_shutdown weeks so the trajectory only shows the run-up to shutdown, not
+ * reactions to the closure itself.
+ */
 export function mergeAlignedSeries(series: GameSeries[], fallbackNow: Date): AlignedRow[] {
   const map = new Map<number, AlignedRow>();
   for (const s of series) {
     const reference = referenceDateForGame(s.game, fallbackNow);
-    const aligned = alignByReferenceDate(s.weekly, reference);
+    const beforeShutdown = s.weekly.filter((w) => w.reviewPhase !== "post_shutdown");
+    const aligned = alignByReferenceDate(beforeShutdown, reference);
     for (const p of aligned) {
       let row = map.get(p.weeksOffset);
       if (!row) {

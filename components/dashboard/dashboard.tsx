@@ -17,12 +17,19 @@ export function Dashboard() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
-      <header className="flex flex-col gap-1">
+      <header className="flex flex-col gap-2">
         <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
           Gacha Pulse
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Sentiment and review trends across 10 gacha games — five live, five end-of-service.
+        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          Gacha Pulse checks the &ldquo;pulse&rdquo; of gacha games: free-to-play, live-service
+          video games where you spend in-game currency (and sometimes real money) to make
+          randomized &ldquo;pulls&rdquo; for characters. These games have a limited lifespan;
+          without enough players or financial support, they inevitably reach End of Service (EoS)
+          and shut down.
+        </p>
+        <p className="text-xs text-muted-foreground/70">
+          Trend arrows compare each game&rsquo;s trailing 4-week sentiment against the 4 weeks before that.
         </p>
       </header>
 
