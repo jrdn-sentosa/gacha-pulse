@@ -17,6 +17,11 @@ async function fetchAllReviews(): Promise<RawReview[]> {
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
   const rows: RawReview[] = [];
 
+  // .order() below is required, not cosmetic: without an explicit sort, Postgres/PostgREST
+  // don't guarantee a stable row order between separate queries on the same table, so two
+  // concurrent .range() slices (or the same query run twice, e.g. once on /pull and once on
+  // /dashboard) can silently return overlapping and/or missing rows — corrupting every
+  // downstream aggregate (sentiment %, review counts) differently on each page load.
   for (let pageStart = 0; pageStart < totalPages; pageStart += CONCURRENCY) {
     const pageIndexes = Array.from(
       { length: Math.min(CONCURRENCY, totalPages - pageStart) },
@@ -29,6 +34,7 @@ async function fetchAllReviews(): Promise<RawReview[]> {
         return supabase
           .from("reviews")
           .select("game_id,voted_up,created_at,playtime_forever")
+          .order("id", { ascending: true })
           .range(from, to);
       })
     );
