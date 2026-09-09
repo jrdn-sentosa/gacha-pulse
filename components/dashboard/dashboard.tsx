@@ -9,6 +9,7 @@ import { HealthyVsEosChart } from "@/components/dashboard/healthy-vs-eos-chart";
 import { WhyEosSection } from "@/components/dashboard/why-eos-section";
 import { GameDetail } from "@/components/dashboard/game-detail";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { TIER_COLORS } from "@/lib/theme";
 
 export function Dashboard() {
   const { loading, error, series, referenceDate } = useDashboardData();
@@ -32,10 +33,20 @@ export function Dashboard() {
         <p className="text-xs text-muted-foreground/70">
           Trend arrows compare each game&rsquo;s trailing 4-week sentiment against the 4 weeks before that.
         </p>
-        <p className="text-xs text-muted-foreground/70">
-          Status bands: Healthy &ge;85% positive &middot; Stable 70&ndash;84% &middot; At Risk
-          &lt;70% (live games only) &middot; Service Ended for EoS titles, regardless of past
-          sentiment.
+        <p className="text-xs text-muted-foreground/70">Review data refreshes automatically once daily.</p>
+        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground/70">
+          <span>Status bands:</span>
+          <TierDot color={TIER_COLORS.gold} />
+          <span>Healthy &ge;85% positive</span>
+          <span aria-hidden="true">&middot;</span>
+          <TierDot color={TIER_COLORS.purple} />
+          <span>Stable 70&ndash;84%</span>
+          <span aria-hidden="true">&middot;</span>
+          <TierDot color={TIER_COLORS.blue} />
+          <span>At Risk &lt;70% (live games only)</span>
+          <span aria-hidden="true">&middot;</span>
+          <TierDot color={TIER_COLORS.gray} />
+          <span>Service Ended for EoS titles, regardless of past sentiment.</span>
         </p>
       </header>
 
@@ -87,6 +98,10 @@ const LIMITATIONS = [
   "Smaller titles (Battle Star & Gran Saga) have far fewer reviews than the larger games, so their trend lines should be read with more caution.",
   "A ‘Healthy’ status here reflects review sentiment only; it is not a financial health indicator. A game can have strongly positive reviews and still reach End of Service if player spending, revenue, or operating costs don't support it. Sentiment is a possible leading indicator, not a guarantee of continued operation.",
 ];
+
+function TierDot({ color }: { color: string }) {
+  return <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />;
+}
 
 function LimitationsSection() {
   return (
