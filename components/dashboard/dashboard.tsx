@@ -6,6 +6,7 @@ import { GameCardRow } from "@/components/dashboard/game-card-row";
 import { SentimentChart } from "@/components/dashboard/sentiment-chart";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { HealthyVsEosChart } from "@/components/dashboard/healthy-vs-eos-chart";
+import { WhyEosSection } from "@/components/dashboard/why-eos-section";
 import { GameDetail } from "@/components/dashboard/game-detail";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 
@@ -47,6 +48,8 @@ export function Dashboard() {
         <>
           <GameCardRow series={series} selectedId={selectedId} onSelect={setSelectedId} />
 
+          <WhyEosSection />
+
           <Tabs defaultValue="sentiment">
             <TabsList>
               <TabsTrigger value="sentiment">Sentiment</TabsTrigger>
@@ -77,6 +80,7 @@ const LIMITATIONS = [
   "Most gacha end-of-service cases happen on mobile-only titles that never had a Steam release. The 5 EoS games tracked here are the subset that happened to have Steam presence and not necessarily a representative sample of gacha shutdowns overall.",
   "Steam reviewers are self-selected, not a random sample of players. Reviews left tend to reveal opinions of more engaged or more vocal segments of the player base.",
   "Smaller titles (Battle Star & Gran Saga) have far fewer reviews than the larger games, so their trend lines should be read with more caution.",
+  "A ‘Healthy’ status here reflects review sentiment only; it is not a financial health indicator. A game can have strongly positive reviews and still reach End of Service if player spending, revenue, or operating costs don't support it. Sentiment is a possible leading indicator, not a guarantee of continued operation.",
 ];
 
 function LimitationsSection() {
