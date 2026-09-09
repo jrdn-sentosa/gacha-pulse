@@ -13,9 +13,13 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GameToggleLegend } from "@/components/dashboard/game-toggle-legend";
-import { mergeAlignedSeries } from "@/lib/aggregate";
-import { TIER_COLORS } from "@/lib/theme";
+import { mergeAlignedSeries, pickDefaultComparisonSelection } from "@/lib/aggregate";
+import { TIER_COLORS, eosStyleForIndex } from "@/lib/theme";
 import type { GameSeries } from "@/lib/types";
+
+const SMOOTHING_WINDOW = 4;
+const MIN_WEEKS_OFFSET = -52;
+const MAX_WEEKS_OFFSET = 4;
 
 interface HealthyVsEosChartProps {
   series: GameSeries[];
@@ -23,14 +27,26 @@ interface HealthyVsEosChartProps {
 }
 
 export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartProps) {
-  const [visible, setVisible] = useState<Set<string>>(
-    () => new Set(series.map((s) => s.game.id))
-  );
+  const [visible, setVisible] = useState<Set<string>>(() => pickDefaultComparisonSelection(series));
 
   const rows = useMemo(
-    () => mergeAlignedSeries(series, referenceDate),
+    () =>
+      mergeAlignedSeries(series, referenceDate, {
+        smoothingWindow: SMOOTHING_WINDOW,
+        minWeeksOffset: MIN_WEEKS_OFFSET,
+        maxWeeksOffset: MAX_WEEKS_OFFSET,
+      }),
     [series, referenceDate]
   );
+
+  // Stable per-EoS-game index (independent of toggle state) so a game's color/dash
+  // doesn't shift as other games are toggled on and off.
+  const eosOrder = useMemo(
+    () => series.filter((s) => s.game.is_eos).map((s) => s.game.id),
+    [series]
+  );
+  const styleFor = (s: GameSeries) =>
+    s.game.is_eos ? eosStyleForIndex(eosOrder.indexOf(s.game.id)) : { color: TIER_COLORS[s.tier], dash: undefined };
 
   function toggle(id: string) {
     setVisible((prev) => {
@@ -46,9 +62,10 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
       <CardHeader>
         <CardTitle className="text-lg">Healthy vs. EoS trajectories</CardTitle>
         <CardDescription>
-          Sentiment aligned by weeks relative to EoS announcement (0 = announced). Live games are
-          anchored to today, as if they announced right now — solid lines are live, dashed lines
-          are games that have already shut down.
+          4-week rolling average of sentiment over the year before EoS announcement through 4
+          weeks after (0 = announced, solid line). Live games are anchored to today, as if they
+          announced right now — solid colored lines are live, each shut-down game gets its own
+          muted color and dash pattern.
         </CardDescription>
         <p className="text-xs text-muted-foreground/70">
           Reviews posted after a game&rsquo;s shutdown date are excluded from this comparison —
@@ -58,10 +75,15 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">
-          <GameToggleLegend series={series} visible={visible} onToggle={toggle} />
+          <GameToggleLegend
+            series={series}
+            visible={visible}
+            onToggle={toggle}
+            colorFor={(s) => styleFor(s).color}
+          />
           <div className="h-[360px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 4, right: 12, left: -12, bottom: 0 }}>
+              <LineChart data={rows} margin={{ top: 20, right: 12, left: -12, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="weeksOffset"
@@ -85,8 +107,8 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
                 <ReferenceLine
                   x={0}
                   stroke="var(--foreground)"
-                  strokeDasharray="4 4"
-                  strokeOpacity={0.4}
+                  strokeWidth={1.5}
+                  strokeOpacity={0.6}
                   label={{ value: "Announced", fontSize: 11, fill: "var(--muted-foreground)", position: "top" }}
                 />
                 <Tooltip
@@ -101,20 +123,23 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
                 />
                 {series
                   .filter((s) => visible.has(s.game.id))
-                  .map((s) => (
-                    <Line
-                      key={s.game.id}
-                      type="monotone"
-                      dataKey={s.game.id}
-                      name={s.game.name}
-                      stroke={TIER_COLORS[s.tier]}
-                      strokeWidth={2}
-                      strokeDasharray={s.game.is_eos ? "5 3" : undefined}
-                      dot={false}
-                      connectNulls
-                      isAnimationActive={false}
-                    />
-                  ))}
+                  .map((s) => {
+                    const style = styleFor(s);
+                    return (
+                      <Line
+                        key={s.game.id}
+                        type="monotone"
+                        dataKey={s.game.id}
+                        name={s.game.name}
+                        stroke={style.color}
+                        strokeWidth={2}
+                        strokeDasharray={style.dash}
+                        dot={false}
+                        connectNulls
+                        isAnimationActive={false}
+                      />
+                    );
+                  })}
               </LineChart>
             </ResponsiveContainer>
           </div>

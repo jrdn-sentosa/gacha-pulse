@@ -63,9 +63,34 @@ export function Dashboard() {
               <HealthyVsEosChart series={series} referenceDate={referenceDate} />
             </TabsContent>
           </Tabs>
+
+          <LimitationsSection />
         </>
       )}
     </main>
+  );
+}
+
+const LIMITATIONS = [
+  "All review data comes from Steam. Most of these games are primarily mobile titles, and Steam represents a smaller, PC-specific slice of the actual player base. The sentiment data here may not reflect the broader (often much larger) mobile audience.",
+  "This project uses Steam review data specifically because Steam offers a clean, official public API (appreviews) with deep historical data, and no comparable option exists for mobile platforms. Google Play has no official reviews API (only unofficial scrapers of uncertain reliability), and Apple's App Store feed, while official, only exposes a shallow recent window (~500 reviews) rather than full history. Incorporating mobile review data would be a natural next step for a more complete picture, but was out of scope here given the reliability and depth tradeoffs involved.",
+  "Most gacha end-of-service cases happen on mobile-only titles that never had a Steam release. The 5 EoS games tracked here are the subset that happened to have Steam presence and not necessarily a representative sample of gacha shutdowns overall.",
+  "Steam reviewers are self-selected, not a random sample of players. Reviews left tend to reveal opinions of more engaged or more vocal segments of the player base.",
+  "Smaller titles (Battle Star & Gran Saga) have far fewer reviews than the larger games, so their trend lines should be read with more caution.",
+];
+
+function LimitationsSection() {
+  return (
+    <section className="border-t border-border/60 pt-6">
+      <h2 className="text-sm font-medium text-muted-foreground">Limitations</h2>
+      <ul className="mt-2 flex max-w-3xl list-disc flex-col gap-2 pl-4 marker:text-muted-foreground/40">
+        {LIMITATIONS.map((point, i) => (
+          <li key={i} className="text-xs leading-relaxed text-muted-foreground/70">
+            {point}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

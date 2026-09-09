@@ -8,14 +8,16 @@ interface GameToggleLegendProps {
   series: GameSeries[];
   visible: Set<string>;
   onToggle: (id: string) => void;
+  /** Override the dot color per game — defaults to its tier color. */
+  colorFor?: (series: GameSeries) => string;
 }
 
-export function GameToggleLegend({ series, visible, onToggle }: GameToggleLegendProps) {
+export function GameToggleLegend({ series, visible, onToggle, colorFor }: GameToggleLegendProps) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {series.map((s) => {
         const active = visible.has(s.game.id);
-        const color = TIER_COLORS[s.tier];
+        const color = colorFor ? colorFor(s) : TIER_COLORS[s.tier];
         return (
           <button
             key={s.game.id}

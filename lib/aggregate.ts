@@ -220,6 +220,27 @@ export function pickOneGamePerTier(series: GameSeries[]): Set<string> {
   return ids;
 }
 
+/**
+ * Picks a small, readable default selection for the trajectory comparison chart: the
+ * healthiest live game plus the two most recently announced EoS games — 2-3 games total
+ * instead of all 10, with the rest toggleable via the legend.
+ */
+export function pickDefaultComparisonSelection(series: GameSeries[]): Set<string> {
+  const ids = new Set<string>();
+  const bestLive = series
+    .filter((s) => !s.game.is_eos)
+    .sort((a, b) => (b.currentSentiment ?? -1) - (a.currentSentiment ?? -1))[0];
+  if (bestLive) ids.add(bestLive.game.id);
+
+  const recentEos = series
+    .filter((s) => s.game.is_eos)
+    .sort((a, b) => (b.game.eos_announced_date ?? "").localeCompare(a.game.eos_announced_date ?? ""))
+    .slice(0, 2);
+  recentEos.forEach((s) => ids.add(s.game.id));
+
+  return ids;
+}
+
 /** The date each game's trajectory should be aligned against: announcement date for EoS games, "now" for live ones. */
 export function referenceDateForGame(game: Game, fallbackNow: Date): Date {
   if (game.is_eos && game.eos_announced_date) return parseISO(game.eos_announced_date);
@@ -231,25 +252,47 @@ interface AlignedRow {
   [gameId: string]: number | null;
 }
 
+export interface MergeAlignedSeriesOptions {
+  /** Window size (in weeks) for a trailing rolling average — omit for raw weekly values. */
+  smoothingWindow?: number;
+  /** Earliest weeksOffset to include (default -52, i.e. one year before alignment). */
+  minWeeksOffset?: number;
+  /** Latest weeksOffset to include (default 4). */
+  maxWeeksOffset?: number;
+}
+
 /**
  * Merges every game's sentiment trend onto a shared "weeks relative to EoS announcement" axis —
  * excludes post_shutdown weeks so the trajectory only shows the run-up to shutdown, not
- * reactions to the closure itself.
+ * reactions to the closure itself. Bounded to [minWeeksOffset, maxWeeksOffset] so a long-lived
+ * game's early history doesn't dwarf shorter-lived games on the shared axis; a game with less
+ * history than the window just shows what it has, unpadded.
  */
-export function mergeAlignedSeries(series: GameSeries[], fallbackNow: Date): AlignedRow[] {
+export function mergeAlignedSeries(
+  series: GameSeries[],
+  fallbackNow: Date,
+  { smoothingWindow, minWeeksOffset = -52, maxWeeksOffset = 4 }: MergeAlignedSeriesOptions = {}
+): AlignedRow[] {
   const map = new Map<number, AlignedRow>();
   for (const s of series) {
     const reference = referenceDateForGame(s.game, fallbackNow);
     const beforeShutdown = s.weekly.filter((w) => w.reviewPhase !== "post_shutdown");
+    const values = smoothingWindow
+      ? trailingAverage(
+          beforeShutdown.map((w) => w.pctPositive),
+          smoothingWindow
+        )
+      : beforeShutdown.map((w) => w.pctPositive);
     const aligned = alignByReferenceDate(beforeShutdown, reference);
-    for (const p of aligned) {
+    aligned.forEach((p, i) => {
+      if (p.weeksOffset < minWeeksOffset || p.weeksOffset > maxWeeksOffset) return;
       let row = map.get(p.weeksOffset);
       if (!row) {
         row = { weeksOffset: p.weeksOffset };
         map.set(p.weeksOffset, row);
       }
-      row[s.game.id] = p.pctPositive;
-    }
+      row[s.game.id] = values[i];
+    });
   }
   return Array.from(map.values()).sort((a, b) => a.weeksOffset - b.weeksOffset);
 }
