@@ -66,23 +66,40 @@ npm install
 
 ## Data pipeline
 
-Reviews are collected in two steps, then loaded into Supabase:
+Reviews are collected and loaded into Supabase automatically every day via
+[`.github/workflows/daily-review-sync.yml`](./.github/workflows/daily-review-sync.yml) — no manual
+run required. The workflow needs two **repository secrets** (Settings → Secrets and variables →
+Actions): `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. It can also be triggered on demand from
+the Actions tab (`Run workflow`).
 
-1. `fetch_reviews.py` pulls Steam reviews for the 5 healthy (still-live) games and writes `data/steam_reviews.csv`.
-2. `fetch_reviews_append.py` appends Steam reviews for the 2 EoS (end-of-service) games to the same CSV.
-3. `load-reviews-to-supabase.mjs` reads `data/steam_reviews.csv` and loads it into the Supabase `reviews` table, matching each row to its `game_id` by name.
+1. `fetch_reviews.py` pulls Steam reviews for all 10 tracked games. It's **incremental**: it first
+   asks Supabase for the most recent `created_at` already stored per game, then stops paginating
+   Steam's (newest-first) review feed as soon as it reaches reviews at or before that cutoff —
+   so a daily run only fetches what's new, not the full history every time. If Supabase isn't
+   configured (e.g. a fresh checkout with no `.env` yet) it falls back to a full fetch for every
+   game. Output goes to `data/steam_reviews.csv` and a per-game count of new reviews found to
+   `data/fetch_summary.json`.
+2. `fetch_reviews_append.py` is a manual, one-off helper for onboarding a **brand-new** game not
+   yet in `APPIDS` — set its appid(s) in the script and run it once; it's not part of the daily
+   automation.
+3. `load-reviews-to-supabase.mjs` reads `data/steam_reviews.csv`, matches each row to its `game_id`
+   by name, and **upserts** into the Supabase `reviews` table on a `dedup_hash` column
+   (`md5(game_id + created_at + review_text)`, `on conflict (dedup_hash) do nothing`) — so
+   re-running the pipeline (or the incremental fetch overlapping slightly with what's already
+   stored) never creates duplicate rows. Steam's own review id is captured into
+   `steam_review_id`. Writes per-game insert/duplicate counts to `data/load_summary.json`.
 
-Run in order, from the repo root:
+To run it manually, from the repo root:
 
 ```sh
 cd scripts
 uv run fetch_reviews.py
-uv run fetch_reviews_append.py
 cd ..
 npm run load
 ```
 
-`data/steam_reviews.csv` and `logs/*.txt` are gitignored (the CSV is ~36MB and fully regeneratable from the commands above, so it isn't committed).
+`data/*.csv`, `data/*.json`, and `logs/*.txt` are gitignored — all regeneratable from the commands
+above, so nothing in `data/` is committed.
 
 ### Header images
 
@@ -138,6 +155,9 @@ Visit `http://localhost:3000` — first-time visitors see the gacha pull reveal,
 
 ```
 gacha/
+├── .github/
+│   └── workflows/
+│       └── daily-review-sync.yml  # scheduled Steam fetch + Supabase load
 ├── app/
 │   ├── page.tsx             # "/" — gacha pull reveal, then redirects to /dashboard
 │   ├── pull/page.tsx        # "/pull" — replay the pull reveal
@@ -150,9 +170,10 @@ gacha/
 │   └── use-dashboard-data.ts  # fetches games + reviews from Supabase
 ├── lib/                     # Supabase client, aggregation, types, theme
 ├── scripts/                 # data collection & loading
-│   ├── fetch_reviews.py
-│   ├── fetch_reviews_append.py
+│   ├── fetch_reviews.py            # incremental daily Steam fetch
+│   ├── fetch_reviews_append.py     # manual one-off: onboard a new game
 │   ├── load-reviews-to-supabase.mjs
+│   ├── print-sync-summary.mjs      # formats the daily workflow's step summary
 │   ├── fetch-header-images.mjs
 │   └── fetch-hero-images.mjs
 ├── supabase/

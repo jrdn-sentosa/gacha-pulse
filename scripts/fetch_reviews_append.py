@@ -61,6 +61,7 @@ def fetch_reviews_for_app(appid, name, writer):
             writer.writerow({
                 "game_name": name,
                 "appid": appid,
+                "recommendationid": r.get("recommendationid", ""),
                 "review_text": r.get("review", ""),
                 "voted_up": r.get("voted_up", ""),
                 "timestamp_created": r.get("timestamp_created", ""),
@@ -83,7 +84,15 @@ def fetch_reviews_for_app(appid, name, writer):
 
 def main():
     out_path = DATA_DIR / "steam_reviews.csv"
-    fieldnames = ["game_name", "appid", "review_text", "voted_up", "timestamp_created", "playtime_forever"]
+    fieldnames = [
+        "game_name",
+        "appid",
+        "recommendationid",
+        "review_text",
+        "voted_up",
+        "timestamp_created",
+        "playtime_forever",
+    ]
 
     with open(out_path, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

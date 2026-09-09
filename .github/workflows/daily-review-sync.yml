@@ -1,0 +1,44 @@
+name: Daily review sync
+
+on:
+  schedule:
+    # 06:00 UTC daily
+    - cron: "0 6 * * *"
+  workflow_dispatch: {} # allows a manual "Run workflow" click from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+        # fetch_reviews.py has zero third-party dependencies (stdlib only), so no
+        # pip/uv install step is needed here.
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Fetch new Steam reviews
+        working-directory: scripts
+        run: python fetch_reviews.py
+
+      - name: Load reviews into Supabase
+        run: npm run load
+
+      - name: Write run summary
+        if: always()
+        run: node scripts/print-sync-summary.mjs >> "$GITHUB_STEP_SUMMARY"

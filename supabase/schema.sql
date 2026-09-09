@@ -22,7 +22,9 @@ create table reviews (
   review_text text,
   voted_up boolean,
   created_at timestamptz,
-  playtime_forever integer
+  playtime_forever integer,
+  steam_review_id text,
+  dedup_hash text unique
 );
 
 -- Index to speed up the queries that the dashboard will run constantly:
