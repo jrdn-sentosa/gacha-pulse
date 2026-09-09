@@ -32,6 +32,11 @@ export function Dashboard() {
         <p className="text-xs text-muted-foreground/70">
           Trend arrows compare each game&rsquo;s trailing 4-week sentiment against the 4 weeks before that.
         </p>
+        <p className="text-xs text-muted-foreground/70">
+          Status bands: Healthy &ge;85% positive &middot; Stable 70&ndash;84% &middot; At Risk
+          &lt;70% (live games only) &middot; Service Ended for EoS titles, regardless of past
+          sentiment.
+        </p>
       </header>
 
       {error && (
