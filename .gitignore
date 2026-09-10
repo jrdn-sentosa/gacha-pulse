@@ -24,6 +24,10 @@ data/*.json
 logs/*.txt
 npm-debug.log*
 
+# ML pipeline (generated data/artifacts, not source)
+ml/data/*.csv
+ml/models/*.joblib
+
 # Next.js
 .next/
 next-env.d.ts

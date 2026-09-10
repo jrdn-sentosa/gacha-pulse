@@ -1,0 +1,10 @@
+[project]
+name = "gacha-ml"
+version = "0.1.0"
+description = "Sentiment classifier training pipeline for gacha review data"
+requires-python = ">=3.13"
+dependencies = [
+    "joblib>=1.6.0",
+    "pandas>=3.0.5",
+    "scikit-learn>=1.9.1",
+]

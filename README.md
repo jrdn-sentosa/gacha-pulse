@@ -132,6 +132,32 @@ join games g on g.id = r.game_id
 group by g.name;
 ```
 
+## Sentiment classifier (`ml/`)
+
+`ml/` trains a standalone sentiment classifier (TF-IDF + logistic regression) on the reviews
+already collected in Supabase. It has its own `pyproject.toml`/`uv.lock`, independent from
+`scripts/` — the scraping scripts are intentionally dependency-free (stdlib-only, keeps the
+daily GitHub Actions workflow fast with zero installs), so `ml/`'s dependencies (scikit-learn,
+pandas, joblib) don't leak into them.
+
+Run both from within `ml/`, using its own lockfile:
+
+```sh
+cd ml
+uv run export_training_data.py
+uv run train_model.py
+cd ..
+```
+
+- `export_training_data.py` — paginates through Supabase's `reviews` table (ordered by `id`,
+  same pagination fix as the dashboard) and writes `review_text`/`voted_up` to
+  `ml/data/training_data.csv`, skipping rows with null/empty review text.
+- `train_model.py` — trains an 80/20 stratified train/test split, reports accuracy, precision,
+  recall, F1, and a confusion matrix on the held-out test set, saves the fitted vectorizer and
+  model to `ml/models/*.joblib`, and writes a metrics summary to `ml/results.md`.
+
+`ml/data/*.csv` and `ml/models/*.joblib` are gitignored — regeneratable from the commands above.
+
 ## Running the dashboard locally
 
 ```sh
@@ -176,6 +202,12 @@ gacha/
 │   ├── print-sync-summary.mjs      # formats the daily workflow's step summary
 │   ├── fetch-header-images.mjs
 │   └── fetch-hero-images.mjs
+├── ml/                     # sentiment classifier training pipeline (own pyproject.toml/uv.lock)
+│   ├── export_training_data.py
+│   ├── train_model.py
+│   ├── data/               # gitignored CSV output
+│   ├── models/             # gitignored trained vectorizer/model
+│   └── results.md          # latest training run's metrics
 ├── supabase/
 │   └── schema.sql
 ├── data/                   # gitignored CSV output
