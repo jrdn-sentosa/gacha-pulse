@@ -146,6 +146,7 @@ Run both from within `ml/`, using its own lockfile:
 cd ml
 uv run export_training_data.py
 uv run train_model.py
+uv run improve_negative_recall.py  # optional: compare recall-improvement techniques
 cd ..
 ```
 
@@ -155,8 +156,16 @@ cd ..
 - `train_model.py` — trains an 80/20 stratified train/test split, reports accuracy, precision,
   recall, F1, and a confusion matrix on the held-out test set, saves the fitted vectorizer and
   model to `ml/models/*.joblib`, and writes a metrics summary to `ml/results.md`.
+- `improve_negative_recall.py` — run after `train_model.py`; compares threshold tuning,
+  ComplementNB, and SMOTE oversampling against the baseline on negative-class recall (using the
+  identical train/test split from `common.py`), appends the comparison to `ml/results.md`, and
+  overwrites `ml/models/model.joblib` with whichever approach wins (subject to macro F1 staying
+  reasonable). If the winner uses a non-default decision threshold, it's recorded in
+  `ml/models/decision_threshold.json` — inference code must apply it instead of the sklearn
+  default of `predict()` (argmax at 0.5).
 
-`ml/data/*.csv` and `ml/models/*.joblib` are gitignored — regeneratable from the commands above.
+`ml/data/*.csv`, `ml/models/*.joblib`, and `ml/models/decision_threshold.json` are gitignored —
+regeneratable from the commands above.
 
 ## Running the dashboard locally
 
@@ -205,8 +214,10 @@ gacha/
 ├── ml/                     # sentiment classifier training pipeline (own pyproject.toml/uv.lock)
 │   ├── export_training_data.py
 │   ├── train_model.py
+│   ├── improve_negative_recall.py  # threshold tuning / ComplementNB / SMOTE comparison
+│   ├── common.py            # shared train/test split used by all ml/ scripts
 │   ├── data/               # gitignored CSV output
-│   ├── models/             # gitignored trained vectorizer/model
+│   ├── models/             # gitignored trained vectorizer/model/decision threshold
 │   └── results.md          # latest training run's metrics
 ├── supabase/
 │   └── schema.sql

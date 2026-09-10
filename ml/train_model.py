@@ -2,8 +2,6 @@
 data, evaluates it on a held-out test set, and saves the fitted vectorizer/model plus
 a metrics summary.
 """
-from pathlib import Path
-
 import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -17,12 +15,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_PATH = SCRIPT_DIR / "data" / "training_data.csv"
-MODELS_DIR = SCRIPT_DIR / "models"
-RESULTS_PATH = SCRIPT_DIR / "results.md"
-
-RANDOM_STATE = 42
+from common import DATA_PATH, EXPERIMENTS_MARKER, MODELS_DIR, RANDOM_STATE, RESULTS_PATH
 
 
 def main():
@@ -99,7 +92,9 @@ Rows = actual, columns = predicted, order = [positive, negative]
 - Vectorizer: `ml/models/vectorizer.joblib`
 - Model: `ml/models/model.joblib`
 """
-    RESULTS_PATH.write_text(results_md, encoding="utf-8")
+    existing = RESULTS_PATH.read_text(encoding="utf-8") if RESULTS_PATH.exists() else ""
+    preserved_tail = EXPERIMENTS_MARKER + existing.split(EXPERIMENTS_MARKER, 1)[1] if EXPERIMENTS_MARKER in existing else ""
+    RESULTS_PATH.write_text(results_md + preserved_tail, encoding="utf-8")
     print(f"\nSaved models to {MODELS_DIR}")
     print(f"Saved results summary to {RESULTS_PATH}")
 
