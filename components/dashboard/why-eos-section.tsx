@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CircleAlert, Skull, Banknote, Server, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Citation {
@@ -13,9 +13,9 @@ function CitationLink({ label, href }: Citation) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-xs text-muted-foreground/70 underline underline-offset-2 transition-colors hover:text-foreground"
+      className="flex w-fit items-center gap-1 text-xs text-muted-foreground/70 underline underline-offset-2 transition-colors hover:text-foreground"
     >
-      {label}
+      {label} <ExternalLink className="h-3 w-3" />
     </a>
   );
 }
@@ -29,13 +29,15 @@ const FUNNEL_STEPS: { label: string; pct: number; color: string }[] = [
 export function WhyEosSection() {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
-        Why Games Reach End of Service
+      <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-foreground">
+        <CircleAlert className="h-5 w-5 text-tier-blue" /> Why Games Reach End of Service
       </h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>The 70% Macro Attrition Wall</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              <Skull className="h-4 w-4 text-muted-foreground" /> The 70% Macro Attrition Wall
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="font-display text-5xl font-bold text-foreground">70%</p>
@@ -55,7 +57,9 @@ export function WhyEosSection() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Aggressive Market Bankruptcies</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              <Banknote className="h-4 w-4 text-muted-foreground" /> Aggressive Market Bankruptcies
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
@@ -80,7 +84,9 @@ export function WhyEosSection() {
 
         <Card>
           <CardHeader>
-            <CardTitle>The Server Lifespan Cliffs</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              <Server className="h-4 w-4 text-muted-foreground" /> The Server Lifespan Cliffs
+            </CardTitle>
             <CardDescription className="leading-relaxed">
               For major releases, telemetry from the GachaGo! End of Service Tracker outlines the
               exact operational milestones where localized servers go dark, based on 251 tracked

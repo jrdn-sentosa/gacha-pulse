@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Starfield } from "@/components/ui/starfield";
 import { CurrencyCounter } from "@/components/pull/currency-counter";
 import { CapsuleGrid } from "@/components/pull/capsule-grid";
 import { PullCardStage } from "@/components/pull/pull-card-stage";
@@ -78,7 +79,8 @@ export function PullIntro() {
   }
 
   return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-12">
+    <main className="relative isolate flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-12">
+      <Starfield density="normal" className="-z-10" />
       <AnimatePresence>
         {showSkip && phase !== "banner" && phase !== "complete" && (
           <motion.button
@@ -161,7 +163,11 @@ export function PullIntro() {
                   disabled={navigating}
                   className="h-12 gap-2 rounded-full px-8 text-base font-semibold"
                 >
-                  {navigating && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {navigating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LayoutDashboard className="h-4 w-4" />
+                  )}
                   {navigating ? "Loading Dashboard..." : "View Dashboard"}
                 </Button>
               </motion.div>

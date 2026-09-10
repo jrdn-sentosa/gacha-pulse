@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { PowerOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TIER_COLORS, TIER_LABELS } from "@/lib/theme";
+import { TIER_COLORS, TIER_LABELS, TIER_ICONS } from "@/lib/theme";
 import { ShineSweep, CrackOverlay } from "@/components/pull/reveal-effects";
 import { cardImage, heroObjectPosition, type PullCardData } from "@/lib/pull";
 
@@ -31,6 +31,7 @@ export const CapsuleCard = memo(function CapsuleCard({ game, revealed, instant }
   const [showEffect, setShowEffect] = useState(!!instant);
   const color = TIER_COLORS[game.tier];
   const image = cardImage(game);
+  const TierIcon = TIER_ICONS[game.tier];
 
   return (
     <motion.div
@@ -72,9 +73,10 @@ export const CapsuleCard = memo(function CapsuleCard({ game, revealed, instant }
           </span>
         ) : (
           <span
-            className="rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide text-background"
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide text-background"
             style={{ backgroundColor: color }}
           >
+            <TierIcon className="h-2.5 w-2.5" />
             {TIER_LABELS[game.tier].toUpperCase()}
           </span>
         )}

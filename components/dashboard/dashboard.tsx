@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Info, TrendingUp, BarChart3, ArrowLeftRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Starfield } from "@/components/ui/starfield";
+import { OrnamentalDivider } from "@/components/ui/ornamental-divider";
 import { GameCardRow } from "@/components/dashboard/game-card-row";
 import { SentimentChart } from "@/components/dashboard/sentiment-chart";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
@@ -18,75 +21,92 @@ export function Dashboard() {
   const selectedSeries = series.find((s) => s.game.id === selectedId) ?? null;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
-          Gacha Pulse
-        </h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Gacha Pulse checks the &ldquo;pulse&rdquo; of gacha games: free-to-play, live-service
-          video games where you spend in-game currency (and sometimes real money) to make
-          randomized &ldquo;pulls&rdquo; for characters. These games have a limited lifespan;
-          without enough players or financial support, they inevitably reach End of Service (EoS)
-          and shut down.
-        </p>
-        <p className="text-xs text-muted-foreground/70">
-          Trend arrows compare each game&rsquo;s trailing 4-week sentiment against the 4 weeks before that.
-        </p>
-        <p className="text-xs text-muted-foreground/70">Review data refreshes automatically once daily.</p>
-        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground/70">
-          <span>Status bands:</span>
-          <TierDot color={TIER_COLORS.gold} />
-          <span>Healthy &ge;85% positive</span>
-          <span aria-hidden="true">&middot;</span>
-          <TierDot color={TIER_COLORS.purple} />
-          <span>Stable 70&ndash;84%</span>
-          <span aria-hidden="true">&middot;</span>
-          <TierDot color={TIER_COLORS.blue} />
-          <span>At Risk &lt;70% (live games only)</span>
-          <span aria-hidden="true">&middot;</span>
-          <TierDot color={TIER_COLORS.gray} />
-          <span>Service Ended for EoS titles, regardless of past sentiment.</span>
-        </p>
-      </header>
+    <div className="relative isolate min-h-svh overflow-hidden bg-background">
+      <Starfield density="sparse" className="-z-10" />
+      <main className="relative mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <header className="flex flex-col gap-2">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
+            Gacha Pulse
+          </h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Gacha Pulse checks the &ldquo;pulse&rdquo; of gacha games: free-to-play, live-service
+            video games where you spend in-game currency (and sometimes real money) to make
+            randomized &ldquo;pulls&rdquo; for characters. These games have a limited lifespan;
+            without enough players or financial support, they inevitably reach End of Service (EoS)
+            and shut down.
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            Trend arrows compare each game&rsquo;s trailing 4-week sentiment against the 4 weeks before that.
+          </p>
+          <p className="text-xs text-muted-foreground/70">Review data refreshes automatically once daily.</p>
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground/70">
+            <span>Status bands:</span>
+            <TierDot color={TIER_COLORS.gold} />
+            <span>Healthy &ge;85% positive</span>
+            <span aria-hidden="true">&middot;</span>
+            <TierDot color={TIER_COLORS.purple} />
+            <span>Stable 70&ndash;84%</span>
+            <span aria-hidden="true">&middot;</span>
+            <TierDot color={TIER_COLORS.blue} />
+            <span>At Risk &lt;70% (live games only)</span>
+            <span aria-hidden="true">&middot;</span>
+            <TierDot color={TIER_COLORS.gray} />
+            <span>Service Ended for EoS titles, regardless of past sentiment.</span>
+          </p>
+        </header>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Failed to load data: {error}
-        </div>
-      )}
+        {error && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            Failed to load data: {error}
+          </div>
+        )}
 
-      {loading ? (
-        <DashboardSkeleton />
-      ) : selectedSeries ? (
-        <GameDetail series={selectedSeries} onBack={() => setSelectedId(null)} />
-      ) : (
-        <>
-          <GameCardRow series={series} selectedId={selectedId} onSelect={setSelectedId} />
+        {loading ? (
+          <DashboardSkeleton />
+        ) : selectedSeries ? (
+          <GameDetail series={selectedSeries} onBack={() => setSelectedId(null)} />
+        ) : (
+          <>
+            <OrnamentalDivider />
 
-          <WhyEosSection />
+            <GameCardRow series={series} selectedId={selectedId} onSelect={setSelectedId} />
 
-          <Tabs defaultValue="sentiment">
-            <TabsList>
-              <TabsTrigger value="sentiment">Sentiment</TabsTrigger>
-              <TabsTrigger value="volume">Volume</TabsTrigger>
-              <TabsTrigger value="comparison">Healthy vs. EoS</TabsTrigger>
-            </TabsList>
-            <TabsContent value="sentiment" className="mt-4">
-              <SentimentChart series={series} />
-            </TabsContent>
-            <TabsContent value="volume" className="mt-4">
-              <VolumeChart series={series} />
-            </TabsContent>
-            <TabsContent value="comparison" className="mt-4">
-              <HealthyVsEosChart series={series} referenceDate={referenceDate} />
-            </TabsContent>
-          </Tabs>
+            <OrnamentalDivider />
 
-          <LimitationsSection />
-        </>
-      )}
-    </main>
+            <WhyEosSection />
+
+            <OrnamentalDivider />
+
+            <Tabs defaultValue="sentiment">
+              <TabsList>
+                <TabsTrigger value="sentiment" className="gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" /> Sentiment
+                </TabsTrigger>
+                <TabsTrigger value="volume" className="gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5" /> Volume
+                </TabsTrigger>
+                <TabsTrigger value="comparison" className="gap-1.5">
+                  <ArrowLeftRight className="h-3.5 w-3.5" /> Healthy vs. EoS
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="sentiment" className="mt-4">
+                <SentimentChart series={series} />
+              </TabsContent>
+              <TabsContent value="volume" className="mt-4">
+                <VolumeChart series={series} />
+              </TabsContent>
+              <TabsContent value="comparison" className="mt-4">
+                <HealthyVsEosChart series={series} referenceDate={referenceDate} />
+              </TabsContent>
+            </Tabs>
+
+            <OrnamentalDivider />
+
+            <LimitationsSection />
+          </>
+        )}
+      </main>
+    </div>
   );
 }
 
@@ -105,8 +125,10 @@ function TierDot({ color }: { color: string }) {
 
 function LimitationsSection() {
   return (
-    <section className="border-t border-border/60 pt-6">
-      <h2 className="text-sm font-medium text-muted-foreground">Limitations</h2>
+    <section>
+      <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+        <Info className="h-4 w-4" /> Limitations
+      </h2>
       <ul className="mt-2 flex max-w-3xl list-disc flex-col gap-2 pl-4 marker:text-muted-foreground/40">
         {LIMITATIONS.map((point, i) => (
           <li key={i} className="text-xs leading-relaxed text-muted-foreground/70">

@@ -126,3 +126,77 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  /* Ambient night-sky backdrop — individually placed/sized stars (not a tiled
+     gradient) so size, glow, brightness and twinkle timing can vary per star
+     instead of reading as one uniform, synced noise pattern. */
+  .starfield-container {
+    position: absolute;
+    inset: -6%;
+    animation: starfield-drift 140s ease-in-out infinite;
+  }
+
+  .star {
+    position: absolute;
+    border-radius: 9999px;
+    background: var(--star-color);
+    box-shadow: 0 0 var(--star-glow) var(--star-glow-spread) var(--star-glow-color);
+    opacity: var(--star-opacity);
+    animation: starfield-twinkle var(--star-duration) ease-in-out var(--star-delay) infinite;
+    will-change: opacity;
+  }
+
+  @keyframes starfield-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(-2.5%, -3%, 0);
+    }
+  }
+
+  @keyframes starfield-twinkle {
+    0%,
+    100% {
+      opacity: calc(var(--star-opacity) * 0.3);
+    }
+    50% {
+      opacity: var(--star-opacity);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .starfield-container {
+      animation: none;
+    }
+    .star {
+      animation: none;
+      opacity: var(--star-opacity);
+    }
+  }
+
+  /* Angled corner-cut framing for the pull banner panel and featured game art —
+     a gacha/game-UI framing device, applied selectively rather than on every card. */
+  .panel-cut {
+    clip-path: polygon(
+      28px 0,
+      100% 0,
+      100% calc(100% - 28px),
+      calc(100% - 28px) 100%,
+      0 100%,
+      0 28px
+    );
+  }
+  .card-cut {
+    clip-path: polygon(
+      16px 0,
+      100% 0,
+      100% calc(100% - 16px),
+      calc(100% - 16px) 100%,
+      0 100%,
+      0 16px
+    );
+  }
+}

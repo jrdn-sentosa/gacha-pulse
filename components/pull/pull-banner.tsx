@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Gem, Sparkles, Lock, PowerOff } from "lucide-react";
+import { Gem, Sparkles, Lock, PowerOff, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TIER_COLORS, TIER_LABELS } from "@/lib/theme";
+import { TIER_COLORS, TIER_LABELS, TIER_ICONS } from "@/lib/theme";
 import { cardImage, heroObjectPosition, pickBannerSelection, type PullCardData } from "@/lib/pull";
 
 interface PullBannerProps {
@@ -30,7 +30,7 @@ export function PullBanner({ cards, currency, ready, loading, onPull }: PullBann
       </div>
 
       <div
-        className="relative overflow-hidden rounded-3xl border border-white/10"
+        className="panel-cut relative overflow-hidden border border-white/10"
         style={{ background: "linear-gradient(135deg, #2a1f0f 0%, #241436 38%, #142238 100%)" }}
       >
         <div
@@ -59,7 +59,7 @@ export function PullBanner({ cards, currency, ready, loading, onPull }: PullBann
           <div className="flex items-stretch gap-3">
             {featured && (
               <div
-                className="relative h-72 flex-[1.6] overflow-hidden rounded-2xl border-2 sm:h-80 lg:h-[440px]"
+                className="card-cut relative h-72 flex-[1.6] overflow-hidden border-2 sm:h-80 lg:h-[440px]"
                 style={{
                   borderColor: TIER_COLORS.gold,
                   boxShadow: `0 0 0 1px ${TIER_COLORS.gold}55, 0 20px 45px -18px ${TIER_COLORS.gold}aa`,
@@ -78,8 +78,8 @@ export function PullBanner({ cards, currency, ready, loading, onPull }: PullBann
                   <div className="h-full w-full bg-tier-gold/20" />
                 )}
                 <div className="absolute inset-x-0 top-0 flex justify-start p-3">
-                  <span className="rounded-full bg-tier-gold px-2.5 py-1 text-[10px] font-bold tracking-wide text-background">
-                    FEATURED
+                  <span className="flex items-center gap-1 rounded-full bg-tier-gold px-2.5 py-1 text-[10px] font-bold tracking-wide text-background">
+                    <Star className="h-2.5 w-2.5 fill-background" /> FEATURED
                   </span>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 pt-12">
@@ -127,9 +127,13 @@ export function PullBanner({ cards, currency, ready, loading, onPull }: PullBann
                         </span>
                       ) : (
                         <span
-                          className="rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide text-background"
+                          className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide text-background"
                           style={{ backgroundColor: color }}
                         >
+                          {(() => {
+                            const TierIcon = TIER_ICONS[game.tier];
+                            return <TierIcon className="h-2.5 w-2.5" />;
+                          })()}
                           {TIER_LABELS[game.tier].toUpperCase()}
                         </span>
                       )}
@@ -157,9 +161,10 @@ export function PullBanner({ cards, currency, ready, loading, onPull }: PullBann
             size="lg"
             disabled={!ready}
             onClick={onPull}
-            className="h-11 rounded-full px-8 text-base font-semibold"
+            className="h-11 gap-2 rounded-full px-8 text-base font-semibold"
             style={ready ? { boxShadow: "0 0 32px -6px rgba(168,85,247,0.75)" } : undefined}
           >
+            {ready && <Sparkles className="h-4 w-4" />}
             {ready ? "Pull x10" : loading ? "Loading roster…" : "Charging…"}
           </Button>
         </div>

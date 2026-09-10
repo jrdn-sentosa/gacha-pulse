@@ -1,13 +1,25 @@
 "use client";
 
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import type { ComponentType } from "react";
+import {
+  ArrowLeft,
+  ExternalLink,
+  CalendarDays,
+  PowerOff,
+  MessageSquare,
+  Clock,
+  Hash,
+  TrendingUp,
+  BarChart3,
+} from "lucide-react";
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
+import { OrnamentalDivider } from "@/components/ui/ornamental-divider";
 import { DetailLineChart } from "@/components/dashboard/detail-line-chart";
-import { TIER_COLORS, TIER_LABELS } from "@/lib/theme";
+import { TIER_COLORS, TIER_LABELS, TIER_ICONS } from "@/lib/theme";
 import type { GameSeries } from "@/lib/types";
 
 interface GameDetailProps {
@@ -18,6 +30,7 @@ interface GameDetailProps {
 export function GameDetail({ series, onBack }: GameDetailProps) {
   const { game, tier, currentSentiment, weekly } = series;
   const color = TIER_COLORS[tier];
+  const TierIcon = TIER_ICONS[tier];
 
   const announced = game.eos_announced_date ? parseISO(game.eos_announced_date) : null;
   const shutdown = game.eos_shutdown_date ? parseISO(game.eos_shutdown_date) : null;
@@ -73,6 +86,7 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
               variant="outline"
               style={{ borderColor: `${color}66`, color }}
             >
+              <TierIcon className="h-3 w-3" />
               {TIER_LABELS[tier]}
             </Badge>
           </div>
@@ -106,11 +120,11 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
         <Card size="sm">
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Announced {format(announced, "MMM d, yyyy")}
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5" /> Announced {format(announced, "MMM d, yyyy")}
               </span>
-              <span className="text-muted-foreground">
-                Shutdown {format(shutdown, "MMM d, yyyy")}
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <PowerOff className="h-3.5 w-3.5" /> Shutdown {format(shutdown, "MMM d, yyyy")}
               </span>
             </div>
             {windDownPct !== null && (
@@ -125,19 +139,24 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total reviews" value={totalReviews.toLocaleString()} />
+        <StatCard icon={MessageSquare} label="Total reviews" value={totalReviews.toLocaleString()} />
         <StatCard
+          icon={Clock}
           label="Avg. playtime at review"
           value={
             overallAvgPlaytimeHours !== null ? `${overallAvgPlaytimeHours.toFixed(0)}h` : "—"
           }
         />
-        <StatCard label="Weeks of data" value={weekly.length.toString()} />
+        <StatCard icon={Hash} label="Weeks of data" value={weekly.length.toString()} />
       </div>
+
+      <OrnamentalDivider />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Sentiment history</CardTitle>
+          <CardTitle className="flex items-center gap-1.5 text-lg">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" /> Sentiment history
+          </CardTitle>
           <CardDescription>Weekly % positive across the full review history.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -155,7 +174,9 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Review volume</CardTitle>
+          <CardTitle className="flex items-center gap-1.5 text-lg">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" /> Review volume
+          </CardTitle>
           <CardDescription>Weekly review count across the full review history.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,7 +194,9 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Average playtime trend</CardTitle>
+          <CardTitle className="flex items-center gap-1.5 text-lg">
+            <Clock className="h-4 w-4 text-muted-foreground" /> Average playtime trend
+          </CardTitle>
           <CardDescription>
             Mean hours played by reviewers at the time they left a review, per week.
           </CardDescription>
@@ -194,11 +217,21 @@ export function GameDetail({ series, onBack }: GameDetailProps) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
   return (
     <Card size="sm">
       <CardContent className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" /> {label}
+        </span>
         <span className="font-display text-2xl font-semibold tabular-nums text-foreground">
           {value}
         </span>

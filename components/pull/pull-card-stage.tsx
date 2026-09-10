@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PowerOff } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { TIER_COLORS, TIER_LABELS } from "@/lib/theme";
+import { TIER_COLORS, TIER_LABELS, TIER_ICONS } from "@/lib/theme";
 import { ShineSweep, CrackOverlay } from "@/components/pull/reveal-effects";
 import { cardImage, heroObjectPosition, type PullCardData } from "@/lib/pull";
 
@@ -43,6 +43,7 @@ export function PullCardStage({ card, index, total, onAdvance }: PullCardStagePr
   const color = TIER_COLORS[card.tier];
   const isLast = index === total - 1;
   const statusLabel = card.is_eos ? "SERVICE ENDED" : TIER_LABELS[card.tier].toUpperCase();
+  const StatusIcon = card.is_eos ? PowerOff : TIER_ICONS[card.tier];
 
   useEffect(() => {
     if (!showEffect) return;
@@ -83,12 +84,13 @@ export function PullCardStage({ card, index, total, onAdvance }: PullCardStagePr
           </h1>
 
           <span
-            className="w-fit rounded-lg px-3 py-1.5 text-lg font-extrabold tracking-wide sm:text-2xl"
+            className="flex w-fit items-center gap-2 rounded-lg px-3 py-1.5 text-lg font-extrabold tracking-wide sm:text-2xl"
             style={{
               backgroundColor: card.is_eos ? "rgba(107,114,128,0.18)" : `${color}22`,
               color: card.is_eos ? "#9CA3AF" : color,
             }}
           >
+            <StatusIcon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
             {statusLabel}
           </span>
 
@@ -111,7 +113,7 @@ export function PullCardStage({ card, index, total, onAdvance }: PullCardStagePr
         <div className="relative flex flex-1 items-center justify-center px-8 pt-10 sm:pt-14 lg:justify-end lg:px-14 lg:pt-0">
           <div
             className={cn(
-              "relative aspect-[3/4] w-[68vw] max-w-xs overflow-hidden rounded-[1.75rem] sm:max-w-sm lg:w-[34vw] lg:max-w-xl",
+              "card-cut relative aspect-[3/4] w-[68vw] max-w-xs overflow-hidden sm:max-w-sm lg:w-[34vw] lg:max-w-xl",
             )}
             style={{
               transform: "rotate(-4deg)",
@@ -164,7 +166,7 @@ export function PullCardStage({ card, index, total, onAdvance }: PullCardStagePr
         <ArrowRight className="h-4 w-4" />
       </motion.button>
 
-      <span className="absolute bottom-7 left-1/2 z-10 -translate-x-1/2 text-xs text-muted-foreground/60 sm:bottom-9">
+      <span className="absolute bottom-7 left-1/2 z-10 -translate-x-1/2 rounded-full border border-white/10 bg-black/30 px-3 py-1 font-mono text-xs font-medium tabular-nums text-muted-foreground/80 backdrop-blur sm:bottom-9">
         {index + 1} / {total}
       </span>
     </div>

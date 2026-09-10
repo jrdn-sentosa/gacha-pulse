@@ -1,3 +1,4 @@
+import { Crown, ShieldCheck, TriangleAlert, PowerOff, type LucideIcon } from "lucide-react";
 import type { Tier } from "./types";
 
 export const TIER_COLORS: Record<Tier, string> = {
@@ -12,6 +13,14 @@ export const TIER_LABELS: Record<Tier, string> = {
   purple: "Stable",
   blue: "At risk",
   gray: "Ended",
+};
+
+/** Icon paired with each tier's status label/badge across the app. */
+export const TIER_ICONS: Record<Tier, LucideIcon> = {
+  gold: Crown,
+  purple: ShieldCheck,
+  blue: TriangleAlert,
+  gray: PowerOff,
 };
 
 /**

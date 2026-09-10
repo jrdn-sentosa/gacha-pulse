@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ArrowLeftRight } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -60,7 +61,9 @@ export function HealthyVsEosChart({ series, referenceDate }: HealthyVsEosChartPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Healthy vs. EoS trajectories</CardTitle>
+        <CardTitle className="flex items-center gap-1.5 text-lg">
+          <ArrowLeftRight className="h-4 w-4 text-muted-foreground" /> Healthy vs. EoS trajectories
+        </CardTitle>
         <CardDescription>
           4-week rolling average of sentiment over the year before EoS announcement through 4
           weeks after (0 = announced, solid line). Live games are anchored to today, as if they

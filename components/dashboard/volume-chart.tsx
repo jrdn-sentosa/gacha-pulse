@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeeklyTrendChart } from "@/components/dashboard/weekly-trend-chart";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,9 @@ export function VolumeChart({ series }: { series: GameSeries[] }) {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <CardTitle className="text-lg">Review volume over time</CardTitle>
+          <CardTitle className="flex items-center gap-1.5 text-lg">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" /> Review volume over time
+          </CardTitle>
           <CardDescription>
             4-week rolling average of weekly review count, per game — smoothed to cut
             week-to-week noise.

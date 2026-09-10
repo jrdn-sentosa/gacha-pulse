@@ -43,7 +43,7 @@ export function CurrencyCounter({
   }, [target, steps, durationMs]);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-tier-gold/25 bg-card/60 px-6 py-4 backdrop-blur">
       <motion.div
         key={tick}
         initial={{ scale: 1 }}
