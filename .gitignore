@@ -24,10 +24,10 @@ data/*.json
 logs/*.txt
 npm-debug.log*
 
-# ML pipeline (generated data/artifacts, not source)
-ml/data/*.csv
-ml/models/*.joblib
-ml/models/decision_threshold.json
+# ML pipelines (generated data/artifacts, not source)
+ml/sentiment/data/*.csv
+ml/sentiment/models/*.joblib
+ml/sentiment/models/decision_threshold.json
 
 # Next.js
 .next/

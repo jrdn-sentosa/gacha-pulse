@@ -1,5 +1,5 @@
 [project]
-name = "gacha-ml"
+name = "gacha-sentiment"
 version = "0.1.0"
 description = "Sentiment classifier training pipeline for gacha review data"
 requires-python = ">=3.13"

@@ -132,40 +132,47 @@ join games g on g.id = r.game_id
 group by g.name;
 ```
 
-## Sentiment classifier (`ml/`)
+## Sentiment classifier (`ml/sentiment/`)
 
-`ml/` trains a standalone sentiment classifier (TF-IDF + logistic regression) on the reviews
-already collected in Supabase. It has its own `pyproject.toml`/`uv.lock`, independent from
-`scripts/` — the scraping scripts are intentionally dependency-free (stdlib-only, keeps the
-daily GitHub Actions workflow fast with zero installs), so `ml/`'s dependencies (scikit-learn,
-pandas, joblib) don't leak into them.
+`ml/` holds one subfolder per ML pipeline. `ml/sentiment/` trains a standalone sentiment
+classifier (TF-IDF + logistic regression) on the reviews already collected in Supabase. It has
+its own `pyproject.toml`/`uv.lock`, independent from `scripts/` — the scraping scripts are
+intentionally dependency-free (stdlib-only, keeps the daily GitHub Actions workflow fast with
+zero installs), so `ml/sentiment/`'s dependencies (scikit-learn, pandas, joblib) don't leak into
+them, and independent from any other `ml/` pipeline's own dependencies.
 
-Run both from within `ml/`, using its own lockfile:
+Run both from within `ml/sentiment/`, using its own lockfile:
 
 ```sh
-cd ml
+cd ml/sentiment
 uv run export_training_data.py
 uv run train_model.py
 uv run improve_negative_recall.py  # optional: compare recall-improvement techniques
-cd ..
+cd ../..
 ```
 
 - `export_training_data.py` — paginates through Supabase's `reviews` table (ordered by `id`,
   same pagination fix as the dashboard) and writes `review_text`/`voted_up` to
-  `ml/data/training_data.csv`, skipping rows with null/empty review text.
+  `ml/sentiment/data/training_data.csv`, skipping rows with null/empty review text.
 - `train_model.py` — trains an 80/20 stratified train/test split, reports accuracy, precision,
   recall, F1, and a confusion matrix on the held-out test set, saves the fitted vectorizer and
-  model to `ml/models/*.joblib`, and writes a metrics summary to `ml/results.md`.
+  model to `ml/sentiment/models/*.joblib`, and writes a metrics summary to
+  `ml/sentiment/results.md`.
 - `improve_negative_recall.py` — run after `train_model.py`; compares threshold tuning,
   ComplementNB, and SMOTE oversampling against the baseline on negative-class recall (using the
-  identical train/test split from `common.py`), appends the comparison to `ml/results.md`, and
-  overwrites `ml/models/model.joblib` with whichever approach wins (subject to macro F1 staying
-  reasonable). If the winner uses a non-default decision threshold, it's recorded in
-  `ml/models/decision_threshold.json` — inference code must apply it instead of the sklearn
-  default of `predict()` (argmax at 0.5).
+  identical train/test split from `common.py`), appends the comparison to
+  `ml/sentiment/results.md`, and overwrites `ml/sentiment/models/model.joblib` with whichever
+  approach wins (subject to macro F1 staying reasonable). If the winner uses a non-default
+  decision threshold, it's recorded in `ml/sentiment/models/decision_threshold.json` — inference
+  code must apply it instead of the sklearn default of `predict()` (argmax at 0.5).
+- `build_pipeline.py` — builds the deployable pipeline bundle (`ml/sentiment/models/pipeline.joblib`)
+  served by `serve.py`.
+- `serve.py` / `modal_serve.py` — FastAPI service exposing the pipeline bundle over HTTP,
+  deployed to Modal (`modal deploy ml/sentiment/modal_serve.py`).
 
-`ml/data/*.csv`, `ml/models/*.joblib`, and `ml/models/decision_threshold.json` are gitignored —
-regeneratable from the commands above.
+`ml/sentiment/data/*.csv`, `ml/sentiment/models/*.joblib`, and
+`ml/sentiment/models/decision_threshold.json` are gitignored — regeneratable from the commands
+above.
 
 ## Running the dashboard locally
 
@@ -211,14 +218,18 @@ gacha/
 │   ├── print-sync-summary.mjs      # formats the daily workflow's step summary
 │   ├── fetch-header-images.mjs
 │   └── fetch-hero-images.mjs
-├── ml/                     # sentiment classifier training pipeline (own pyproject.toml/uv.lock)
-│   ├── export_training_data.py
-│   ├── train_model.py
-│   ├── improve_negative_recall.py  # threshold tuning / ComplementNB / SMOTE comparison
-│   ├── common.py            # shared train/test split used by all ml/ scripts
-│   ├── data/               # gitignored CSV output
-│   ├── models/             # gitignored trained vectorizer/model/decision threshold
-│   └── results.md          # latest training run's metrics
+├── ml/                     # one subfolder per ML pipeline
+│   └── sentiment/          # sentiment classifier training pipeline (own pyproject.toml/uv.lock)
+│       ├── export_training_data.py
+│       ├── train_model.py
+│       ├── improve_negative_recall.py  # threshold tuning / ComplementNB / SMOTE comparison
+│       ├── build_pipeline.py       # builds the deployable pipeline bundle
+│       ├── serve.py / modal_serve.py  # FastAPI service, deployed to Modal
+│       ├── common.py       # shared train/test split used by all ml/sentiment/ scripts
+│       ├── postman/        # Postman collection for the deployed API
+│       ├── data/           # gitignored CSV output
+│       ├── models/         # gitignored trained vectorizer/model/decision threshold
+│       └── results.md      # latest training run's metrics
 ├── supabase/
 │   └── schema.sql
 ├── data/                   # gitignored CSV output
