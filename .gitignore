@@ -29,6 +29,7 @@ ml/sentiment/data/*.csv
 ml/sentiment/models/*.joblib
 ml/sentiment/models/decision_threshold.json
 ml/eos_risk/exploration_output/*.csv
+ml/eos_risk/models/*.joblib
 
 # Next.js
 .next/

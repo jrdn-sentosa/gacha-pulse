@@ -14,6 +14,8 @@ Run from the repo root:   uvicorn ml.serve:app --reload
 """
 import logging
 import sys
+import threading
+import time
 from pathlib import Path
 
 # Make sibling modules (`common`, `pipeline_def`) importable by their bare names regardless
@@ -24,7 +26,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import joblib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from common import MODELS_DIR
@@ -34,10 +37,71 @@ logger = logging.getLogger(__name__)
 
 PIPELINE_PATH = MODELS_DIR / "pipeline.joblib"
 
+# Only the deployed dashboard may call this API from a browser. Postman/curl testing is
+# unaffected by this -- CORS is enforced by browsers via preflight requests, not by API
+# clients, so it never blocks a Postman collection run.
+ALLOWED_ORIGIN = "https://gacha-pulse.vercel.app"
+
+
+def _client_ip(request: Request) -> str:
+    """Modal puts its own reverse proxy in front of the app, so request.client.host would
+    otherwise be the proxy's address for every caller, collapsing all clients into one
+    rate-limit bucket. Prefer the standard X-Forwarded-For header (first hop = the real
+    client) and fall back to request.client.host for local/direct testing.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+class FixedWindowLimiter:
+    """Minimal in-memory fixed-window rate limiter: at most `limit` hits per
+    `window_seconds` per key.
+
+    Deliberately not slowapi: slowapi's `@limiter.limit()` decorator skips its own check
+    on any request where `request.state._rate_limiting_complete` is already true, to
+    avoid double-counting one request that matches multiple registered limits. On Modal
+    that state was found to leak across otherwise-unrelated requests (confirmed by direct
+    inspection of slowapi's storage on the sibling eos_risk deployment: the hit counter
+    only ever reached 1, no matter how many requests were sent, because every request
+    after the first silently skipped its own check) -- almost certainly because Modal's
+    asgi_app adapter doesn't hand each request a fully independent Starlette scope/state
+    the way a standard ASGI server does. This counter needs no per-request state at all,
+    and was verified correct end-to-end on the live deployment (a monotonic 1, 2, 3, then
+    429, 429 sequence under a low test limit) before it replaced slowapi.
+    """
+
+    def __init__(self, limit: int, window_seconds: int = 60):
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self._counts: dict[tuple[str, int], int] = {}
+        self._lock = threading.Lock()
+
+    def hit(self, key: str) -> bool:
+        """Records one hit for `key`; returns True if still within the limit."""
+        bucket = int(time.time() // self.window_seconds)
+        bucket_key = (key, bucket)
+        with self._lock:
+            for existing in [k for k in self._counts if k[0] == key and k[1] != bucket]:
+                del self._counts[existing]  # drop this key's stale buckets
+            self._counts[bucket_key] = self._counts.get(bucket_key, 0) + 1
+            return self._counts[bucket_key] <= self.limit
+
+
+predict_limiter = FixedWindowLimiter(limit=20, window_seconds=60)
+
 app = FastAPI(
     title="Review Sentiment Classifier",
     description="Serves the TF-IDF + ReviewStatsTransformer + LogisticRegression sentiment pipeline.",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[ALLOWED_ORIGIN],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 bundle = None
@@ -94,11 +158,20 @@ def info():
 
 
 @app.post("/predict", response_model=PredictResponse)
-def predict(request: PredictRequest):
+def predict(request: Request, payload: PredictRequest):
     """Runs one review through the pipeline and returns the predicted sentiment label
     (per bundle["label_names"]) and the model's confidence in that label, using
     bundle["decision_threshold"] as the cutoff on P(positive) rather than a hardcoded 0.5.
+
+    Rate-limited to 20 requests/minute/IP (see FixedWindowLimiter above) -- basic abuse
+    protection, not a precise quota; exceeding it returns 429.
     """
+    if not predict_limiter.hit(_client_ip(request)):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests: /predict is limited to 20 requests per minute per IP. Please slow down and try again shortly.",
+        )
+
     _require_bundle()
 
     pipeline = bundle["pipeline"]
@@ -108,7 +181,7 @@ def predict(request: PredictRequest):
     classes = list(pipeline.classes_)  # sorted bools: [False, True]
     label_by_class = dict(zip(classes, label_names))
 
-    proba = pipeline.predict_proba([request.review_text])[0]
+    proba = pipeline.predict_proba([payload.review_text])[0]
     positive_proba = proba[classes.index(True)]
 
     predicted_class = True if positive_proba >= threshold else False

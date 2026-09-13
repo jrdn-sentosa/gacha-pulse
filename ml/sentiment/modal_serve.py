@@ -52,7 +52,14 @@ image = (
 app = modal.App("gacha-sentiment-classifier")
 
 
-@app.function(image=image)
+# max_containers=1: slowapi's rate limiter keeps its counters in-process. Without this,
+# Modal can scale this function out to multiple containers under load, each with its own
+# independent counter, silently defeating the "20/minute per IP" limit (confirmed
+# empirically on the sibling eos_risk deployment: rapid requests all returned 200 before
+# this was added). One container is a deliberate, honest tradeoff for "basic" abuse
+# protection on a low-traffic internal API -- a correct limit across replicas would need
+# a shared store (e.g. Redis), which is out of scope here.
+@app.function(image=image, max_containers=1)
 @modal.asgi_app()
 def fastapi_app():
     import sys
