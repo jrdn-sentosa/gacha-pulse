@@ -1,0 +1,238 @@
+{
+  "info": {
+    "_postman_id": "f3a1c9e2-7b4d-4a6e-9c2f-8d5e6b1a3c90",
+    "name": "Gacha EoS Risk API",
+    "description": "Tests for the deployed Modal EoS-risk pipeline API (ml/eos_risk/serve.py).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-modal-url.modal.run",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "EoS Risk API Tests",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body has status: ok\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"status\", \"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/info",
+              "host": ["{{base_url}}"],
+              "path": ["info"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains expected fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"steps\");",
+                  "    pm.expect(jsonData).to.have.property(\"built_at\");",
+                  "    pm.expect(jsonData).to.have.property(\"sklearn_version\");",
+                  "    pm.expect(jsonData).to.have.property(\"survival_checkpoints\");",
+                  "});",
+                  "",
+                  "pm.test(\"sklearn_version equals 1.9.1\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.sklearn_version).to.eql(\"1.9.1\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Predict - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sentiment_slope\": -5.2,\n    \"sentiment_volatility\": 8.1,\n    \"volume_slope\": -12.0,\n    \"age_weeks\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body has expected fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"risk_score\");",
+                  "    pm.expect(jsonData).to.have.property(\"base_rate_risk\");",
+                  "    pm.expect(jsonData).to.have.property(\"score_sv\");",
+                  "    pm.expect(jsonData).to.have.property(\"interpretation\");",
+                  "});",
+                  "",
+                  "pm.test(\"interpretation is a valid risk band\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect([\"low\", \"moderate\", \"elevated\", \"high\"]).to.include(jsonData.interpretation);",
+                  "});",
+                  "",
+                  "pm.test(\"Response includes the cumulative-vs-hazard-rate caveat\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"caveat\");",
+                  "    pm.expect(jsonData.caveat).to.include(\"cumulative-survival\");",
+                  "    pm.expect(jsonData.caveat).to.include(\"conditional\");",
+                  "    pm.expect(jsonData.caveat).to.include(\"hazard rate\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Predict - Invalid (negative volatility)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sentiment_slope\": -5.2,\n    \"sentiment_volatility\": -1.0,\n    \"volume_slope\": -12.0,\n    \"age_weeks\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains a validation error for sentiment_volatility\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"detail\");",
+                  "    pm.expect(jsonData.detail).to.be.an(\"array\").that.is.not.empty;",
+                  "    const mentionsVolatility = jsonData.detail.some((err) =>",
+                  "        Array.isArray(err.loc) && err.loc.includes(\"sentiment_volatility\")",
+                  "    );",
+                  "    pm.expect(mentionsVolatility).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Predict - Invalid (age_weeks = 0)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sentiment_slope\": -5.2,\n    \"sentiment_volatility\": 8.1,\n    \"volume_slope\": -12.0,\n    \"age_weeks\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains a validation error for age_weeks\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"detail\");",
+                  "    pm.expect(jsonData.detail).to.be.an(\"array\").that.is.not.empty;",
+                  "    const mentionsAgeWeeks = jsonData.detail.some((err) =>",
+                  "        Array.isArray(err.loc) && err.loc.includes(\"age_weeks\")",
+                  "    );",
+                  "    pm.expect(mentionsAgeWeeks).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
