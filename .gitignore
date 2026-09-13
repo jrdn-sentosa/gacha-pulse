@@ -28,6 +28,7 @@ npm-debug.log*
 ml/sentiment/data/*.csv
 ml/sentiment/models/*.joblib
 ml/sentiment/models/decision_threshold.json
+ml/eos_risk/exploration_output/*.csv
 
 # Next.js
 .next/
