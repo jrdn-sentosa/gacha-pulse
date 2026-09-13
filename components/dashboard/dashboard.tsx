@@ -9,6 +9,7 @@ import { GameCardRow } from "@/components/dashboard/game-card-row";
 import { SentimentChart } from "@/components/dashboard/sentiment-chart";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { HealthyVsEosChart } from "@/components/dashboard/healthy-vs-eos-chart";
+import { TryTheModelsSection } from "@/components/dashboard/try-the-models-section";
 import { WhyEosSection } from "@/components/dashboard/why-eos-section";
 import { GameDetail } from "@/components/dashboard/game-detail";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
@@ -99,6 +100,10 @@ export function Dashboard() {
                 <HealthyVsEosChart series={series} referenceDate={referenceDate} />
               </TabsContent>
             </Tabs>
+
+            <OrnamentalDivider />
+
+            <TryTheModelsSection />
 
             <OrnamentalDivider />
 

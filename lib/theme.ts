@@ -53,3 +53,29 @@ export function tierFor(isEos: boolean, currentSentiment: number | null): Tier {
   if (currentSentiment >= 70) return "purple";
   return "blue";
 }
+
+/** Badge classes for the sentiment classifier's predicted label, in "Try the Models". */
+export const SENTIMENT_BADGE_CLASSES: Record<"positive" | "negative", string> = {
+  positive: "bg-tier-gold/15 text-tier-gold",
+  negative: "bg-destructive/10 text-destructive dark:bg-destructive/20",
+};
+
+/**
+ * Badge classes + labels for the EoS-risk pipeline's interpretation band, in
+ * "Try the Models" -- reuses the same gold/purple/blue "how healthy" scale as the status
+ * bands above, plus destructive/red for "high" (there's no live-game tier that maps to
+ * "this game is now over," so red is borrowed from the sentiment-negative case instead).
+ */
+export const RISK_BAND_LABELS: Record<string, string> = {
+  low: "Low",
+  moderate: "Moderate",
+  elevated: "Elevated",
+  high: "High",
+};
+
+export const RISK_BAND_BADGE_CLASSES: Record<string, string> = {
+  low: "bg-tier-gold/15 text-tier-gold",
+  moderate: "bg-tier-purple/15 text-tier-purple",
+  elevated: "bg-tier-blue/15 text-tier-blue",
+  high: "bg-destructive/10 text-destructive dark:bg-destructive/20",
+};

@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = Path(__file__).resolve().parent
 PIPELINE_PATH = SCRIPT_DIR / "models" / "pipeline.joblib"
 
-# Only the deployed dashboard may call this API from a browser. Postman/curl testing is
-# unaffected by this -- CORS is enforced by browsers via preflight requests, not by API
-# clients, so it never blocks a Postman collection run.
-ALLOWED_ORIGIN = "https://gacha-pulse.vercel.app"
+# Only the deployed dashboard (plus local dev) may call this API from a browser.
+# Postman/curl testing is unaffected by this -- CORS is enforced by browsers via
+# preflight requests, not by API clients, so it never blocks a Postman collection run.
+ALLOWED_ORIGINS = ["https://gacha-pulse.vercel.app", "http://localhost:3000"]
 
 
 def _client_ip(request: Request) -> str:
@@ -106,7 +106,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[ALLOWED_ORIGIN],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
