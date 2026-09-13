@@ -1,0 +1,187 @@
+{
+  "info": {
+    "_postman_id": "b6f8a2e0-6c2a-4b8e-9c1a-2f6e9a3d7c11",
+    "name": "Gacha Sentiment API",
+    "description": "Tests for the deployed Modal sentiment classifier API (ml/serve.py).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-modal-url.modal.run",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Sentiment API Tests",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body has status: ok\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"status\", \"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/info",
+              "host": ["{{base_url}}"],
+              "path": ["info"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains expected fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"steps\");",
+                  "    pm.expect(jsonData).to.have.property(\"built_at\");",
+                  "    pm.expect(jsonData).to.have.property(\"sklearn_version\");",
+                  "    pm.expect(jsonData).to.have.property(\"decision_threshold\");",
+                  "    pm.expect(jsonData).to.have.property(\"label_names\");",
+                  "});",
+                  "",
+                  "pm.test(\"sklearn_version equals 1.9.1\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.sklearn_version).to.eql(\"1.9.1\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Predict - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"review_text\": \"This game is absolutely amazing, I love the combat system!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"predicted_sentiment is positive or negative\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"predicted_sentiment\");",
+                  "    pm.expect([\"positive\", \"negative\"]).to.include(jsonData.predicted_sentiment);",
+                  "});",
+                  "",
+                  "pm.test(\"confidence is a number between 0 and 1\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"confidence\");",
+                  "    pm.expect(jsonData.confidence).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.confidence).to.be.at.least(0);",
+                  "    pm.expect(jsonData.confidence).to.be.at.most(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Predict - Invalid (empty string)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"review_text\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains a validation error for review_text\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"detail\");",
+                  "    pm.expect(jsonData.detail).to.be.an(\"array\").that.is.not.empty;",
+                  "    const mentionsReviewText = jsonData.detail.some((err) =>",
+                  "        Array.isArray(err.loc) && err.loc.includes(\"review_text\")",
+                  "    );",
+                  "    pm.expect(mentionsReviewText).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
