@@ -17,6 +17,11 @@ RANDOM_STATE = 42
 # train_model.py must preserve anything from this marker onward when it rewrites the file.
 EXPERIMENTS_MARKER = "\n## Negative-class recall improvement experiments\n"
 
+# Heading that starts the section bootstrap_ci.py appends to results.md, after the
+# experiments section above. improve_negative_recall.py must preserve anything from this
+# marker onward when it rewrites its own section, so re-running it doesn't wipe out CIs.
+BOOTSTRAP_CI_MARKER = "\n## Bootstrap confidence intervals (95%)\n"
+
 
 def load_split():
     df = pd.read_csv(DATA_PATH)

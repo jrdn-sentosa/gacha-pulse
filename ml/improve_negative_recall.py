@@ -24,7 +24,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.naive_bayes import ComplementNB
 
-from common import EXPERIMENTS_MARKER, MODELS_DIR, RESULTS_PATH, load_split
+from common import BOOTSTRAP_CI_MARKER, EXPERIMENTS_MARKER, MODELS_DIR, RESULTS_PATH, load_split
 
 THRESHOLDS = [0.30, 0.35, 0.40, 0.45, 0.50]
 
@@ -142,6 +142,9 @@ def main():
 
     # --- Write comparison table to results.md ---
     existing = RESULTS_PATH.read_text(encoding="utf-8") if RESULTS_PATH.exists() else ""
+    # bootstrap_ci.py appends its own section after this one; preserve it if present so
+    # re-running this script doesn't wipe out those confidence intervals.
+    preserved_tail = BOOTSTRAP_CI_MARKER + existing.split(BOOTSTRAP_CI_MARKER, 1)[1] if BOOTSTRAP_CI_MARKER in existing else ""
     existing = existing.split(EXPERIMENTS_MARKER)[0].rstrip() + "\n"
 
     header = (
@@ -165,7 +168,7 @@ def main():
     )
 
     section = EXPERIMENTS_MARKER + "\n" + header + "\n".join(rows) + "\n" + winner_line + confusion_section
-    RESULTS_PATH.write_text(existing + section, encoding="utf-8")
+    RESULTS_PATH.write_text(existing + section + preserved_tail, encoding="utf-8")
     print(f"\nAppended comparison table to {RESULTS_PATH}")
 
 
