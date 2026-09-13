@@ -1,7 +1,7 @@
 [project]
 name = "gacha-eos-risk"
 version = "0.1.0"
-description = "Exploratory EoS-risk modeling pipeline for gacha review data"
+description = "EoS-risk modeling pipeline for gacha review data"
 requires-python = ">=3.13"
 dependencies = [
     "pandas>=3.0.5",
@@ -9,4 +9,8 @@ dependencies = [
     "scipy>=1.14",
     "dtaidistance>=2.3",
     "ruptures>=1.1",
+    "scikit-learn==1.9.1",
+    "joblib>=1.6.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
 ]
