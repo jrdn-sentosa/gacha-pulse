@@ -123,12 +123,40 @@ const EOS_RISK_FIELDS: {
   key: keyof EosRiskFormState;
   label: string;
   helper: string;
+  placeholder: string;
 }[] = [
-  { key: "sentimentSlope", label: "Sentiment slope", helper: "Trailing 4-week change in % positive, per week" },
-  { key: "sentimentVolatility", label: "Sentiment volatility", helper: "Rolling std. deviation of weekly % positive" },
-  { key: "volumeSlope", label: "Volume slope", helper: "Trailing 4-week change in review volume, per week" },
-  { key: "ageWeeks", label: "Age (weeks)", helper: "Age in weeks since first review" },
+  {
+    key: "sentimentSlope",
+    label: "Sentiment slope",
+    helper: "Trailing 4-week change in % positive, per week",
+    placeholder: "-17.5",
+  },
+  {
+    key: "sentimentVolatility",
+    label: "Sentiment volatility",
+    helper: "Rolling std. deviation of weekly % positive",
+    placeholder: "26.26",
+  },
+  {
+    key: "volumeSlope",
+    label: "Volume slope",
+    helper: "Trailing 4-week change in review volume, per week",
+    placeholder: "-1.4",
+  },
+  {
+    key: "ageWeeks",
+    label: "Age (weeks)",
+    helper: "Age in weeks since first review",
+    placeholder: "255",
+  },
 ];
+
+const EOS_RISK_EXAMPLE_VALUES: EosRiskFormState = {
+  sentimentSlope: "-17.5",
+  sentimentVolatility: "26.26",
+  volumeSlope: "-1.4",
+  ageWeeks: "255",
+};
 
 function isValidEosRiskForm(form: EosRiskFormState): boolean {
   const slope = Number(form.sentimentSlope);
@@ -167,6 +195,10 @@ function EosRiskTesterCard() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function fillExampleValues() {
+    setForm(EOS_RISK_EXAMPLE_VALUES);
+  }
+
   async function handleSubmit() {
     setStatus("loading");
     setErrorMessage("");
@@ -202,11 +234,22 @@ function EosRiskTesterCard() {
         </CardTitle>
         <CardDescription>
           Enter a game&rsquo;s current trend metrics to see the deployed EoS-risk pipeline&rsquo;s score.
-          Far less rigorously validated than the sentiment classifier — see{" "}
-          <code className="text-[0.85em]">ml/eos_risk/evaluation.md</code>.
+          Far less rigorously validated than the sentiment classifier — validated against only 5
+          known shutdown cases, so treat it as illustrative, not predictive.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={fillExampleValues}
+          disabled={status === "loading"}
+          className="self-start"
+        >
+          Try example values (Honkai Impact 3rd)
+        </Button>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {EOS_RISK_FIELDS.map((field) => (
             <div key={field.key} className="flex flex-col gap-1">
@@ -217,6 +260,7 @@ function EosRiskTesterCard() {
                 id={`${formId}-${field.key}`}
                 type="number"
                 step="any"
+                placeholder={field.placeholder}
                 value={form[field.key]}
                 onChange={(e) => updateField(field.key, e.target.value)}
               />
