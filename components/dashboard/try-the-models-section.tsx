@@ -14,6 +14,9 @@ const EOS_RISK_API_URL = process.env.NEXT_PUBLIC_EOS_RISK_API_URL;
 
 const UNAVAILABLE_MESSAGE = "Model temporarily unavailable — try again shortly.";
 
+const EOS_RISK_SHORT_CAVEAT =
+  "Based on how many similarly-aged games have already shut down — not a prediction of this specific game's odds.";
+
 type RequestStatus = "idle" | "loading" | "success" | "error";
 
 export function TryTheModelsSection() {
@@ -187,6 +190,7 @@ function EosRiskTesterCard() {
   const [status, setStatus] = useState<RequestStatus>("idle");
   const [result, setResult] = useState<EosRiskResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showFullCaveat, setShowFullCaveat] = useState(false);
   const formId = useId();
 
   const canSubmit = isValidEosRiskForm(form) && status !== "loading";
@@ -202,6 +206,7 @@ function EosRiskTesterCard() {
   async function handleSubmit() {
     setStatus("loading");
     setErrorMessage("");
+    setShowFullCaveat(false);
     try {
       const res = await fetch(`${EOS_RISK_API_URL}/predict`, {
         method: "POST",
@@ -285,7 +290,17 @@ function EosRiskTesterCard() {
                 {RISK_BAND_LABELS[result.interpretation] ?? result.interpretation}
               </Badge>
             </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground/70">{result.caveat}</p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground/70">{EOS_RISK_SHORT_CAVEAT}</p>
+            <button
+              type="button"
+              onClick={() => setShowFullCaveat((prev) => !prev)}
+              className="self-start text-[11px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              {showFullCaveat ? "Hide details" : "What does this mean?"}
+            </button>
+            {showFullCaveat && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground/70">{result.caveat}</p>
+            )}
           </div>
         )}
       </CardContent>
